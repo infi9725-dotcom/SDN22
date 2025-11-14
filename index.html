@@ -750,11 +750,11 @@
                     <i class="fas fa-id-card"></i>
                     <span>Cetak Identitas Siswa</span>
                 </div>
-                <div class="sidebar-item admin-only" data-target="manajemen-pengguna">
+                <div class="sidebar-item Admin-only" data-target="manajemen-pengguna">
                     <i class="fas fa-users-cog"></i>
                     <span>Manajemen Pengguna</span>
                 </div>
-                <div class="sidebar-item admin-only" data-target="pengaturan">
+                <div class="sidebar-item Admin-only" data-target="pengaturan">
                     <i class="fas fa-cog"></i>
                     <span>Pengaturan</span>
                 </div>
@@ -1741,13 +1741,13 @@
             dataKetidakhadiran = loadData('dataKetidakhadiran');
             dataCatatanWalas = loadData('dataCatatanWalas');
             dataUsers = loadData('dataUsers', [
-                { id: 'admin1', username: 'Admin', password: '12345', role: 'Admin' },
-                { id: 'guru1', username: 'Yelmi Putri', password: '12345', role: 'Guru Kelas 1' },
-                { id: 'guru2', username: 'Doni Candra', password: '12345', role: 'Guru Kelas 2' },
-                { id: 'guru3', username: 'Nelda Wati', password: '12345', role: 'Guru Kelas 3' },
-                { id: 'guru4', username: 'Iismaleni', password: '12345', role: 'Guru Kelas 4' },
-                { id: 'guru5', username: 'Yola Yurmaliza', password: '12345', role: 'Guru Kelas 5' },
-                { id: 'guru6', username: 'Nurdasmi', password: '12345', role: 'Guru Kelas 6' }
+                { id: 'Admin1', username: 'Admin', password: '12345', role: 'Admin' },
+                { id: 'guru1', username: 'Yelmi Putri, S.Pd', password: '12345', role: 'Guru Kelas 1' },
+                { id: 'guru2', username: 'Doni Candra, S.Pd', password: '12345', role: 'Guru Kelas 2' },
+                { id: 'guru3', username: 'Neldawati, S.Pd.SD', password: '12345', role: 'Guru Kelas 3' },
+                { id: 'guru4', username: 'Iismaleni, S.Pd', password: '12345', role: 'Guru Kelas 4' },
+                { id: 'guru5', username: 'Yola Yurmaliza, S.Pd', password: '12345', role: 'Guru Kelas 5' },
+                { id: 'guru6', username: 'Nurdasmi, S.Pd.SD', password: '12345', role: 'Guru Kelas 6' }
             ]);
         }
 
@@ -1851,8 +1851,8 @@
             // --- COLOR LOGIC END ---
 
 
-            // Hide/show admin-only sidebar items
-            document.querySelectorAll('.admin-only').forEach(item => {
+            // Hide/show Admin-only sidebar items
+            document.querySelectorAll('.Admin-only').forEach(item => {
                 if (isAdmin) {
                     item.classList.remove('hidden');
                 } else {
@@ -1906,7 +1906,7 @@
             // Form is hidden only if it's a Guru and there's no way to assign a class (but here, we assign it automatically below)
             // Let's control the visibility and auto-fill in activateSection or renderDataWalasTable.
             // The form itself should generally be visible to the Guru.
-            // We ensure it's hidden from non-admin only if they are not a guru.
+            // We ensure it's hidden from non-Admin only if they are not a guru.
             if (formDataWalas) {
                 const isGuru = currentRole && currentRole.startsWith('Guru Kelas');
                 if (isGuru || isAdmin) {
@@ -2161,7 +2161,7 @@
 
         formDataSekolah.addEventListener('submit', function(event) {
             event.preventDefault();
-            // Removed the admin-only check here, allowing Guru to save Data Sekolah
+            // Removed the Admin-only check here, allowing Guru to save Data Sekolah
             dataSekolah = {
                 namaSekolah: document.getElementById('nama-sekolah').value,
                 npsn: document.getElementById('npsn').value,
@@ -3026,11 +3026,11 @@
                 row.insertCell().textContent = user.role;
                 const actionCell = row.insertCell();
                 actionCell.classList.add('no-print');
-                // Prevent deleting the currently logged-in admin or the last admin
+                // Prevent deleting the currently logged-in Admin or the last Admin
                 const isCurrentUser = currentUser && user.id === currentUser.id;
                 const isAdmin = user.role === 'Admin';
-                const adminCount = dataUsers.filter(u => u.role === 'Admin').length;
-                const disableDelete = (isCurrentUser && isAdmin) || (isAdmin && adminCount === 1);
+                const AdminCount = dataUsers.filter(u => u.role === 'Admin').length;
+                const disableDelete = (isCurrentUser && isAdmin) || (isAdmin && AdminCount === 1);
 
                 actionCell.innerHTML = `
                     <button class="btn-edit" onclick="editUser('${user.id}')"><i class="fas fa-edit"></i> Edit</button>
@@ -3096,8 +3096,8 @@
             if (type === 'user') {
                 const userToDelete = dataUsers.find(u => u.id === id);
                 const isAdmin = userToDelete && userToDelete.role === 'Admin';
-                const adminCount = dataUsers.filter(u => u.role === 'Admin').length;
-                if (isAdmin && adminCount === 1) {
+                const AdminCount = dataUsers.filter(u => u.role === 'Admin').length;
+                if (isAdmin && AdminCount === 1) {
                     showToast('Tidak bisa menghapus Admin terakhir!', true);
                     return;
                 }
@@ -4505,4 +4505,5 @@
         });
     </script>
 </body>
+
 </html>

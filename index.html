@@ -1,842 +1,472 @@
-import React, { useState, useRef } from 'react';
-import { 
-  Upload, 
-  Image as ImageIcon, 
-  Sparkles, 
-  Download, 
-  RefreshCw, 
-  AlertCircle, 
-  CheckCircle2, 
-  Maximize2, 
-  UserCheck,
-  Home,
-  Layout,
-  Menu,
-  X,
-  ChevronRight,
-  Eraser,
-  User,
-  Users,
-  Palette,
-  Image as ImageBtn,
-  Scissors,
-  PlusSquare,
-  Type
-} from 'lucide-react';
-
-const App = () => {
-  // State Navigasi
-  const [activeTab, setActiveTab] = useState('home');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  // State Umum
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [base64Image, setBase64Image] = useState(null);
-  const [processedImage, setProcessedImage] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
-  const [status, setStatus] = useState('');
-  
-  // State khusus Enhancer
-  const [resolution, setResolution] = useState('4K');
-
-  // State khusus Pas Foto
-  const [gender, setGender] = useState('Pria');
-  const [clothingType, setClothingType] = useState('Jas Hitam');
-  const [hijabStyle, setHijabStyle] = useState('Segi Empat Rapi');
-  const [hijabColor, setHijabColor] = useState('Putih');
-  const [pasFotoBgColor, setPasFotoBgColor] = useState('Biru');
-  const [isHairNeat, setIsHairNeat] = useState(false);
-
-  // State khusus Pembuat Gambar
-  const [imagePrompt, setImagePrompt] = useState('');
-  const [imageRatio, setImageRatio] = useState('1:1');
-
-  const fileInputRef = useRef(null);
-  const apiKey = ""; // API Key disediakan otomatis
-
-  const resolutions = [
-    { label: 'HD', value: '720p', desc: 'Standar' },
-    { label: 'Full HD', value: '1080p', desc: 'Tajam' },
-    { label: '2K', value: '1440p', desc: 'Sangat Tajam' },
-    { label: '4K', value: '2160p', desc: 'Ultra HD' },
-  ];
-
-  const aspectRatios = [
-    { label: '1:1', desc: 'Kotak' },
-    { label: '4:3', desc: 'Klasik' },
-    { label: '3:4', desc: 'Portrait' },
-    { label: '16:9', desc: 'Widescreen' },
-  ];
-
-  const clothingOptions = {
-    Pria: [
-      { label: 'Jas Hitam', desc: 'Formal Klasik' },
-      { label: 'Jas & Dasi Hitam', desc: 'Sangat Formal' },
-      { label: 'Kemeja Putih & Dasi Hitam', desc: 'Administrasi Formal' },
-      { label: 'Kemeja Putih Polos', desc: 'Administrasi Dasar' },
-      { label: 'Batik Lengan Panjang', desc: 'Resmi Budaya' },
-      { label: 'Seragam PNS', desc: 'Dinas Cokelat' },
-      { label: 'Kemeja Biru Muda', desc: 'Kasual Kantor' },
-    ],
-    Wanita: [
-      { label: 'Jas Hitam Tanpa Dasi', desc: 'Profesional Tegas' },
-      { label: 'Jas Hitam Dasi Hitam', desc: 'Formal Eksekutif' },
-      { label: 'Kemeja Putih & Dasi Hitam', desc: 'Administrasi Formal' },
-      { label: 'Seragam PNS Wanita', desc: 'Dinas Cokelat KH' },
-      { label: 'Blazer Hitam', desc: 'Bisnis Kasual' },
-      { label: 'Kebaya Modern', desc: 'Resmi Budaya' },
-      { label: 'Kemeja Putih Wanita', desc: 'Formal Dasar' },
-      { label: 'Hijab Formal', desc: 'Kustom Gaya & Warna' },
-      { label: 'Batik Wanita', desc: 'Motif Elegan' },
-    ]
-  };
-
-  const hijabStyles = ['Segi Empat Rapi', 'Pashmina Formal', 'Syari Menutup Dada'];
-  const hijabColors = [
-    { name: 'Putih', hex: '#FFFFFF' },
-    { name: 'Hitam', hex: '#000000' },
-    { name: 'Navy', hex: '#000080' },
-    { name: 'Maroon', hex: '#800000' },
-    { name: 'Nude', hex: '#E3C5AF' },
-    { name: 'Abu-abu', hex: '#808080' }
-  ];
-
-  const pasFotoBgColors = [
-    { name: 'Biru', hex: '#0000FF' },
-    { name: 'Merah', hex: '#FF0000' },
-    { name: 'Putih', hex: '#FFFFFF' },
-    { name: 'Abu-abu', hex: '#D1D5DB' },
-    { name: 'Kuning', hex: '#FFD700' }
-  ];
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 4 * 1024 * 1024) {
-        setError("Ukuran file terlalu besar. Maksimal 4MB.");
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(URL.createObjectURL(file));
-        setBase64Image(reader.result.split(',')[1]);
-        setProcessedImage(null);
-        setError(null);
-        setStatus('Foto berhasil diunggah');
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const processAIRequest = async (prompt, successMsg) => {
-    if (!base64Image) return;
-
-    setIsProcessing(true);
-    setError(null);
-    setStatus('Sedang memproses dalam kualitas Ultra HD...');
-
-    const payload = {
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: "image/png", data: base64Image } }
-          ]
-        }
-      ],
-      generationConfig: {
-        responseModalities: ['TEXT', 'IMAGE']
-      }
-    };
-
-    const delays = [1000, 2000, 4000, 8000, 16000];
-    let lastError = null;
-
-    for (let i = 0; i < delays.length; i++) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Arsip SDN 22 Tanah Keras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-link.active { background-color: #1e40af; border-left: 4px solid #fbbf24; }
+        .hidden-section { display: none; }
         
-        const result = await response.json();
-        const base64Data = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-        
-        if (base64Data) {
-          setProcessedImage(`data:image/png;base64,${base64Data}`);
-          setStatus(successMsg);
-          setIsProcessing(false);
-          return; 
-        } else {
-          throw new Error("AI tidak mengembalikan data gambar.");
-        }
-      } catch (err) {
-        lastError = err;
-        if (i < delays.length - 1) {
-          await new Promise(res => setTimeout(res, delays[i]));
-        }
-      }
-    }
-
-    setError(`Gagal memproses foto: ${lastError?.message || "Kesalahan tidak dikenal"}. Silakan coba lagi.`);
-    setIsProcessing(false);
-  };
-
-  const generateImageAI = async () => {
-    if (!imagePrompt.trim()) {
-      setError("Silakan masukkan instruksi gambar terlebih dahulu.");
-      return;
-    }
-
-    setIsProcessing(true);
-    setError(null);
-    setStatus('Sedang melukis gambar impian Anda...');
-
-    const payload = {
-      instances: {
-        prompt: `High quality, realistic, beautiful artwork: ${imagePrompt}. Aspect ratio ${imageRatio}`
-      },
-      parameters: {
-        sampleCount: 1,
-        aspectRatio: imageRatio === '1:1' ? '1:1' : imageRatio === '4:3' ? '4:3' : imageRatio === '3:4' ? '3:4' : '16:9'
-      }
-    };
-
-    const delays = [1000, 2000, 4000, 8000, 16000];
-    let lastError = null;
-
-    for (let i = 0; i < delays.length; i++) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
-        
-        if (base64Data) {
-          setProcessedImage(`data:image/png;base64,${base64Data}`);
-          setStatus("Gambar berhasil dibuat!");
-          setIsProcessing(false);
-          return; 
-        } else {
-          throw new Error("AI tidak mengembalikan data gambar.");
-        }
-      } catch (err) {
-        lastError = err;
-        if (i < delays.length - 1) {
-          await new Promise(res => setTimeout(res, delays[i]));
-        }
-      }
-    }
-
-    setError(`Gagal membuat gambar: ${lastError?.message || "Kesalahan tidak dikenal"}.`);
-    setIsProcessing(false);
-  };
-
-  const enhanceImage = () => {
-    const prompt = `ENHANCEMENT TASK: Upscale and enhance this image to ${resolution} resolution (Ultra HD quality). 
-    CRITICAL REQUIREMENT: Strictly preserve the original facial identity, features, and unique likeness of the person. 
-    DO NOT change the person's appearance. Enhance skin texture to be clear but natural. 
-    Make the eyes, hair, and edges sharp while keeping the identity identical to the original input. 
-    Output must be in highest possible quality, sharp, and realistic.`;
-    processAIRequest(prompt, `Selesai! Foto ditingkatkan ke ${resolution}.`);
-  };
-
-  const removeBackground = () => {
-    const prompt = `BACKGROUND REMOVAL TASK: Remove the background from this image. 
-    Keep only the main subject and make everything else purely transparent. 
-    Ensure clean edges. Preserve the subject's details perfectly in high resolution.`;
-    processAIRequest(prompt, "Selesai! Latar belakang telah dihapus.");
-  };
-
-  const generatePasFoto = () => {
-    let clothingDetail = `neat and high-quality ${clothingType}`;
-    let hairGrooming = isHairNeat ? "The hair must be perfectly groomed, neat, combed professionally, with no messy strands or flyaways. A clean professional haircut appearance." : "";
-    
-    if (clothingType === 'Hijab Formal') {
-      clothingDetail = `neat formal clothing with a ${hijabStyle} style hijab in ${hijabColor} color. The hijab must look professional, well-folded, and realistic for a document photo.`;
-      hairGrooming = ""; 
-    } else if (clothingType === 'Seragam PNS Wanita' || clothingType === 'Seragam PNS') {
-      // Perubahan: Menghapus atribut bahu (epaulets) dan papan nama secara total
-      clothingDetail = `a professional Indonesian civil servant uniform (Seragam PNS/KH) in khaki or light tan brown color. The uniform must feature a clean formal collared design. Strictly NO name tag, NO pins, and NO shoulder epaulets (pangkat). The chest area and shoulders must be completely plain and clean.`;
-      
-      if (gender === 'Wanita' && (clothingType === 'Seragam PNS Wanita' || clothingType === 'Seragam PNS')) {
-        if (hijabStyle && hijabColor) {
-          clothingDetail += ` Combined with a matching ${hijabStyle} style hijab in ${hijabColor} color that is neatly tucked into the collar.`;
-          hairGrooming = "";
-        }
-      }
-    } else if (clothingType === 'Kemeja Biru Muda') {
-      clothingDetail = `a high-quality, crisp and clean light blue formal collared shirt. The fabric should look like well-pressed cotton, professional, and neat.`;
-    } else if (clothingType === 'Kemeja Putih & Dasi Hitam') {
-      clothingDetail = `a crisp plain white collared shirt with a professional, neat black necktie`;
-    } else if (clothingType.includes("Jas Hitam")) {
-      clothingDetail = clothingType.includes("Dasi") 
-        ? "a crisp black suit with a professional black necktie" 
-        : "a crisp black suit with a neat collared shirt underneath";
-    }
-
-    const prompt = `PAS FOTO TASK: Convert this ${gender}'s photo into a professional formal passport-style portrait in 4K RESOLUTION. 
-    CLOTHING REQUIREMENT: Change the current clothing to ${clothingDetail}. 
-    ${hairGrooming}
-    BACKGROUND REQUIREMENT: Set the background to a solid ${pasFotoBgColor} color. The background must be perfectly flat and even.
-    UPSCALING REQUIREMENT: Increase image resolution to 4K Ultra HD. Sharpen facial features, eyes, and skin textures.
-    CRITICAL: Keep the person's face exactly the same (strict identity preservation). 
-    Final output must be crystal clear, sharp, high-resolution, and look like a high-end professional studio photograph.`;
-    
-    processAIRequest(prompt, `Selesai! Pas foto 4K dengan latar ${pasFotoBgColor} telah siap.`);
-  };
-
-  const downloadImage = () => {
-    if (!processedImage) return;
-    const link = document.createElement('a');
-    link.href = processedImage;
-    link.download = `ai-pro-result-${activeTab}-4k.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const resetApp = () => {
-    setSelectedImage(null);
-    setBase64Image(null);
-    setProcessedImage(null);
-    setError(null);
-    setStatus('');
-    setImagePrompt('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const switchTab = (tab) => {
-    setActiveTab(tab);
-    resetApp();
-    if (tab === 'pas-foto') {
-      setGender('Pria');
-      setClothingType('Jas Hitam');
-      setPasFotoBgColor('Biru');
-      setIsHairNeat(false);
-    }
-  };
-
-  const renderHome = () => (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-in">
-      <div className="mb-6 p-4 bg-indigo-100 rounded-3xl text-indigo-600">
-        <Sparkles className="w-12 h-12" />
-      </div>
-      <h1 className="text-5xl font-black text-slate-900 mb-4 tracking-tight uppercase text-balance">
-        AI CREATIVE LABS 4K
-      </h1>
-      <p className="text-xl text-slate-500 max-w-2xl mb-8">
-        Platform AI terpadu untuk segala kebutuhan kreatif Anda. Hasilkan gambar dari teks, tingkatkan resolusi, atau buat pas foto formal dalam kualitas 4K jernih.
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl w-full mb-10">
-        <button onClick={() => switchTab('image-generator')} className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group text-left border-b-4 border-b-purple-500">
-          <PlusSquare className="w-10 h-10 text-purple-600 mb-4 group-hover:scale-110 transition-transform" />
-          <h3 className="font-bold text-xl text-slate-800 mb-2">Pembuat Gambar</h3>
-          <p className="text-sm text-slate-500">Ubah teks instruksi Anda menjadi gambar artistik berkualitas tinggi.</p>
-        </button>
-        <button onClick={() => switchTab('enhancer')} className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group text-left border-b-4 border-b-indigo-500">
-          <Maximize2 className="w-10 h-10 text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
-          <h3 className="font-bold text-xl text-slate-800 mb-2">Photo Enhancer</h3>
-          <p className="text-sm text-slate-500">Ubah foto buram menjadi kualitas 4K yang tajam secara instan.</p>
-        </button>
-        <button onClick={() => switchTab('pas-foto')} className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group text-left border-b-4 border-b-blue-500">
-          <User className="w-10 h-10 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
-          <h3 className="font-bold text-xl text-slate-800 mb-2">Pas Foto 4K</h3>
-          <p className="text-sm text-slate-500">Ganti pakaian formal & background dengan hasil HD jernih.</p>
-        </button>
-        <button onClick={() => switchTab('bg-remover')} className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group text-left border-b-4 border-b-rose-500">
-          <Eraser className="w-10 h-10 text-rose-600 mb-4 group-hover:scale-110 transition-transform" />
-          <h3 className="font-bold text-xl text-slate-800 mb-2">Hapus Background</h3>
-          <p className="text-sm text-slate-500">Hapus latar belakang foto dengan presisi tinggi kualitas HD.</p>
-        </button>
-      </div>
-    </div>
-  );
-
-  const renderImageGenerator = () => (
-    <div className="max-w-4xl mx-auto animate-in">
-      <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
-            <PlusSquare className="w-5 h-5" />
-          </div>
-          <h3 className="font-bold text-slate-800">AI Image Generator</h3>
-        </div>
-
-        <div className="p-6 md:p-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
-            {/* Input Form */}
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Type className="w-3 h-3" /> Instruksi Gambar (Prompt)
-                </label>
-                <textarea 
-                  value={imagePrompt}
-                  onChange={(e) => setImagePrompt(e.target.value)}
-                  placeholder="Contoh: Pemandangan pegunungan saat matahari terbenam dengan gaya lukisan minyak..."
-                  className="w-full h-32 p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-50 outline-none transition-all resize-none text-sm font-medium"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pilih Rasio Gambar</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {aspectRatios.map((ratio) => (
-                    <button
-                      key={ratio.label}
-                      onClick={() => setImageRatio(ratio.label)}
-                      className={`p-3 rounded-xl border-2 transition-all text-left ${
-                        imageRatio === ratio.label 
-                        ? 'border-purple-600 bg-purple-50/50 shadow-sm ring-2 ring-purple-50' 
-                        : 'border-transparent bg-slate-50 text-slate-500 hover:border-slate-200'
-                      }`}
-                    >
-                      <div className={`text-xs font-black ${imageRatio === ratio.label ? 'text-purple-700' : 'text-slate-700'}`}>
-                        {ratio.label}
-                      </div>
-                      <div className="text-[9px] font-bold opacity-60">{ratio.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              {!processedImage && (
-                <button 
-                  onClick={generateImageAI}
-                  disabled={isProcessing}
-                  className="w-full py-5 rounded-2xl font-black text-white bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-100 flex items-center justify-center gap-3 transition-all disabled:opacity-50"
-                >
-                  {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                  Hasilkan Gambar
-                </button>
-              )}
-            </div>
-
-            {/* Preview Output */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hasil Generasi</span>
-                {processedImage && (
-                  <button onClick={resetApp} className="text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-tighter">Hapus</button>
-                )}
-              </div>
-              <div className={`aspect-square bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 flex items-center justify-center relative`}>
-                {processedImage ? (
-                  <img src={processedImage} alt="Generated AI" className="w-full h-full object-contain animate-in" />
-                ) : isProcessing ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 relative mb-4">
-                       <div className="absolute inset-0 border-4 border-purple-100 rounded-full"></div>
-                       <div className="absolute inset-0 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                    <p className="text-slate-500 font-bold text-[10px] tracking-widest uppercase animate-pulse">Melukis Imajinasi Anda...</p>
-                  </div>
-                ) : (
-                  <div className="text-slate-300 flex flex-col items-center italic text-xs p-10 text-center">
-                    <PlusSquare className="w-12 h-12 mb-3 opacity-10" />
-                    <p>Tulis deskripsi dan tekan tombol Hasilkan Gambar untuk memulai</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {processedImage && (
-            <div className="flex justify-center animate-in">
-              <button onClick={downloadImage} className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black hover:bg-slate-800 flex items-center gap-3 transition-all shadow-xl">
-                <Download className="w-5 h-5" /> UNDUH GAMBAR AI
-              </button>
-            </div>
-          )}
-          
-          {error && <div className="mt-6 p-4 bg-red-50 text-red-700 rounded-2xl text-xs font-bold flex items-center gap-3 border border-red-100"><AlertCircle className="w-5 h-5" /> {error}</div>}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderToolLayout = (title, icon, processFn, toolType) => {
-    const isEnhancer = toolType === 'enhancer';
-    const isPasFoto = toolType === 'pas-foto';
-    const isBgRemover = toolType === 'bg-remover';
-
-    return (
-      <div className="max-w-4xl mx-auto animate-in">
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="p-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${isEnhancer ? 'bg-indigo-100 text-indigo-600' : isPasFoto ? 'bg-blue-100 text-blue-600' : 'bg-rose-100 text-rose-600'}`}>
-                {icon}
-              </div>
-              <h3 className="font-bold text-slate-800">{title} {isPasFoto && "(Ultra HD Mode)"}</h3>
-            </div>
-            {selectedImage && !isProcessing && (
-              <button onClick={resetApp} className="text-xs font-bold text-slate-400 hover:text-red-500 flex items-center gap-1">
-                <RefreshCw className="w-3 h-3" /> GANTI FOTO
-              </button>
-            )}
-          </div>
-
-          {!selectedImage ? (
-            <div 
-              className="p-16 text-center"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const file = e.dataTransfer.files[0];
-                if (file) handleImageUpload({ target: { files: [file] } });
-              }}
-            >
-              <div className={`border-2 border-dashed rounded-3xl p-12 transition-all cursor-pointer group ${isEnhancer ? 'border-indigo-100 hover:border-indigo-400 hover:bg-indigo-50' : isPasFoto ? 'border-blue-100 hover:border-blue-400 hover:bg-blue-50' : 'border-rose-100 hover:border-rose-400 hover:bg-rose-50'}`}
-                   onClick={() => fileInputRef.current.click()}>
-                <Upload className={`w-12 h-12 mx-auto mb-4 group-hover:scale-110 transition-transform ${isEnhancer ? 'text-indigo-600' : isPasFoto ? 'text-blue-600' : 'text-rose-600'}`} />
-                <h3 className="text-xl font-semibold mb-2 text-slate-800">Unggah Foto</h3>
-                <p className="text-slate-500 mb-6 text-sm">Pastikan wajah terlihat jelas untuk hasil 4K maksimal</p>
-                <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                <button className={`text-white px-10 py-3 rounded-xl font-bold shadow-md ${isEnhancer ? 'bg-indigo-600 hover:bg-indigo-700' : isPasFoto ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700'}`}>
-                  Pilih File
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="p-6 md:p-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                <div className="space-y-3">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Input Original</span>
-                  <div className="aspect-square bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 flex items-center justify-center">
-                    <img src={selectedImage} alt="Original" className="w-full h-full object-contain" />
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${isEnhancer ? 'text-indigo-500' : isPasFoto ? 'text-blue-500' : 'text-rose-500'}`}>Hasil AI (4K/HD)</span>
-                    {processedImage && (
-                      <div className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-full uppercase tracking-tighter">Crystal Clear</div>
-                    )}
-                  </div>
-                  <div className={`aspect-square bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 flex items-center justify-center relative ${isBgRemover ? "bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')]" : ""}`}>
-                    {processedImage ? (
-                      <img src={processedImage} alt="Processed" className="w-full h-full object-contain animate-in" />
-                    ) : isProcessing ? (
-                      <div className="flex flex-col items-center">
-                        <RefreshCw className={`w-12 h-12 animate-spin mb-4 ${isEnhancer ? 'text-indigo-600' : isPasFoto ? 'text-blue-600' : 'text-rose-600'}`} />
-                        <p className="text-slate-500 font-bold text-[10px] tracking-widest uppercase">Meningkatkan Resolusi...</p>
-                      </div>
-                    ) : (
-                      <div className="text-slate-300 flex flex-col items-center italic text-xs">
-                        <ImageIcon className="w-12 h-12 mb-2 opacity-10" />
-                        <p>Siap diproses</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Tool Settings Area */}
-              {!processedImage && !isProcessing && (
-                <div className="mb-10 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                  {isEnhancer ? (
-                    <>
-                      <h4 className="text-xs font-black text-slate-700 mb-4 uppercase tracking-wider flex items-center gap-2">
-                        <Maximize2 className="w-4 h-4 text-indigo-500" /> Resolusi Target
-                      </h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        {resolutions.map((res) => (
-                          <button
-                            key={res.label}
-                            onClick={() => setResolution(res.label)}
-                            className={`p-4 rounded-2xl border-2 transition-all text-left ${
-                              resolution === res.label ? 'border-indigo-600 bg-white shadow-lg ring-4 ring-indigo-50' : 'border-transparent bg-white/50 text-slate-500 hover:border-slate-200'
-                            }`}
-                          >
-                            <div className="text-sm font-black text-slate-800">{res.label}</div>
-                            <div className="text-[10px] font-medium opacity-60">{res.desc}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  ) : isPasFoto ? (
-                    <div className="space-y-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-2 text-indigo-600">
-                          <Sparkles className="w-4 h-4" /> Mode Pas Foto Jernih (4K)
-                        </h4>
-                        
-                        <div className="flex bg-slate-200/50 p-1 rounded-xl w-full sm:w-auto">
-                          {['Pria', 'Wanita'].map((g) => (
-                            <button
-                              key={g}
-                              onClick={() => { setGender(g); setClothingType(clothingOptions[g][0].label); }}
-                              className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-xs font-bold transition-all ${gender === g ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                            >
-                              {g}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {clothingOptions[gender].map((opt) => (
-                          <button
-                            key={opt.label}
-                            onClick={() => setClothingType(opt.label)}
-                            className={`p-3 rounded-xl border-2 transition-all text-left flex flex-col justify-center ${
-                              clothingType === opt.label ? 'border-blue-600 bg-white shadow-md ring-2 ring-blue-50' : 'border-transparent bg-white/40 text-slate-500 hover:border-slate-200'
-                            }`}
-                          >
-                            <div className={`text-[11px] font-black leading-tight mb-1 ${clothingType === opt.label ? 'text-blue-600' : 'text-slate-700'}`}>
-                              {opt.label}
-                            </div>
-                            <div className="text-[9px] font-medium opacity-50 truncate">{opt.desc}</div>
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="pt-6 border-t border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-6">
-                          <div className="space-y-4">
-                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                              <ImageBtn className="w-3 h-3" /> Warna Background
-                            </h5>
-                            <div className="flex flex-wrap gap-2">
-                              {pasFotoBgColors.map((color) => (
-                                <button
-                                  key={color.name}
-                                  onClick={() => setPasFotoBgColor(color.name)}
-                                  className={`w-10 h-10 rounded-xl border-2 transition-all flex items-center justify-center ${pasFotoBgColor === color.name ? 'border-blue-600 scale-105 shadow-md' : 'border-slate-200 opacity-80'}`}
-                                  style={{ backgroundColor: color.hex }}
-                                >
-                                  {pasFotoBgColor === color.name && (
-                                    <CheckCircle2 className={`w-5 h-5 ${color.name === 'Putih' || color.name === 'Abu-abu' || color.name === 'Kuning' ? 'text-slate-800' : 'text-white'}`} />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {clothingType !== 'Hijab Formal' && (
-                            <div className="space-y-4 animate-in">
-                              <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                <Scissors className="w-3 h-3" /> Grooming & Sharpness
-                              </h5>
-                              <button
-                                onClick={() => setIsHairNeat(!isHairNeat)}
-                                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${isHairNeat ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                              >
-                                <div className="flex items-center gap-3 text-left">
-                                  <div className={`p-2 rounded-lg ${isHairNeat ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                    <UserCheck className="w-5 h-5" />
-                                  </div>
-                                  <div>
-                                    <div className={`text-xs font-black ${isHairNeat ? 'text-emerald-700' : 'text-slate-700'}`}>Rapikan & Tajamkan</div>
-                                    <div className="text-[9px] font-bold text-slate-400 text-balance">Merapikan rambut & detail wajah HD</div>
-                                  </div>
-                                </div>
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isHairNeat ? 'border-emerald-500 bg-emerald-500' : 'border-slate-200'}`}>
-                                  {isHairNeat && <CheckCircle2 className="w-4 h-4 text-white" />}
-                                </div>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {(clothingType === 'Hijab Formal' || (gender === 'Wanita' && clothingType === 'Seragam PNS Wanita')) && (
-                          <div className="space-y-4 animate-in">
-                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                              <Palette className="w-3 h-3" /> Kustomisasi Hijab HD
-                            </h5>
-                            
-                            <div className="space-y-4">
-                              <div className="flex flex-wrap gap-2">
-                                {hijabStyles.map((style) => (
-                                  <button
-                                    key={style}
-                                    onClick={() => setHijabStyle(style)}
-                                    className={`px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-all ${hijabStyle === style ? 'bg-blue-50 border-blue-600 text-blue-600' : 'bg-white border-slate-200 text-slate-500'}`}
-                                  >
-                                    {style}
-                                  </button>
-                                ))}
-                              </div>
-
-                              <div className="flex flex-wrap gap-2">
-                                {hijabColors.map((color) => (
-                                  <button
-                                    key={color.name}
-                                    onClick={() => setHijabColor(color.name)}
-                                    className={`w-7 h-7 rounded-full border-2 transition-all flex items-center justify-center ${hijabColor === color.name ? 'border-blue-600 scale-110' : 'border-transparent opacity-70'}`}
-                                    style={{ backgroundColor: color.hex }}
-                                  >
-                                    {hijabColor === color.name && (
-                                      <CheckCircle2 className={`w-3.5 h-3.5 ${color.name === 'Putih' || color.name === 'Nude' ? 'text-slate-800' : 'text-white'}`} />
-                                    )}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              )}
-
-              {error && <div className="mb-8 p-4 bg-red-50 text-red-700 rounded-2xl text-xs font-bold flex items-center gap-3 border border-red-100"><AlertCircle className="w-5 h-5" /> {error}</div>}
-              {status && !error && (
-                <div className="mb-8 flex justify-center">
-                  <div className="px-6 py-2 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg animate-pulse">
-                    {status}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                {!processedImage ? (
-                  <button 
-                    onClick={processFn} 
-                    disabled={isProcessing}
-                    className={`px-12 py-5 rounded-2xl font-black text-white shadow-2xl flex items-center gap-3 transition-all disabled:opacity-50 hover:-translate-y-1 active:scale-95 ${isEnhancer ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : isPasFoto ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-rose-600 hover:bg-rose-700 shadow-rose-200'}`}
-                  >
-                    {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                    {isEnhancer ? `Tingkatkan ke ${resolution}` : isPasFoto ? `Buat Pas Foto 4K` : 'Hapus Background HD'}
-                  </button>
-                ) : (
-                  <>
-                    <button onClick={downloadImage} className="bg-emerald-600 text-white px-12 py-5 rounded-2xl font-black hover:bg-emerald-700 flex items-center gap-3 transition-all shadow-xl shadow-emerald-100 hover:-translate-y-1 active:scale-95">
-                      <Download className="w-5 h-5" /> UNDUH FOTO 4K
-                    </button>
-                    <button onClick={resetApp} className="bg-white text-slate-700 border border-slate-200 px-12 py-5 rounded-2xl font-black hover:bg-slate-50 transition-all active:scale-95">
-                      BATAL
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
-      {/* Sidebar */}
-      <aside className={`${isSidebarOpen ? 'w-72' : 'w-24'} bg-slate-900 text-white transition-all duration-300 flex flex-col z-50 shadow-2xl`}>
-        <div className="p-8 flex items-center gap-4">
-          <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-purple-500 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
-          {isSidebarOpen && (
-            <div className="flex flex-col leading-none">
-              <span className="font-black text-xl tracking-tighter">AI LABS</span>
-              <span className="text-[9px] font-bold text-slate-500 tracking-widest mt-1 uppercase">Creative Suite</span>
-            </div>
-          )}
-        </div>
-
-        <nav className="flex-1 px-4 py-8 space-y-3 overflow-y-auto">
-          <button onClick={() => switchTab('home')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === 'home' ? 'bg-white/10 text-white shadow-xl border border-white/10' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>
-            <Home className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && <span className="font-bold text-sm">Beranda</span>}
-          </button>
-          
-          <div className={`text-[10px] font-black text-slate-600 uppercase tracking-widest px-6 mt-10 mb-4 ${!isSidebarOpen && 'text-center px-0'}`}>Tools</div>
-
-          <button onClick={() => switchTab('image-generator')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === 'image-generator' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>
-            <PlusSquare className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && <span className="font-bold text-sm">Pembuat Gambar</span>}
-          </button>
-
-          <button onClick={() => switchTab('enhancer')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === 'enhancer' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>
-            <Maximize2 className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && <span className="font-bold text-sm">Photo Enhancer</span>}
-          </button>
-
-          <button onClick={() => switchTab('pas-foto')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === 'pas-foto' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>
-            <User className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && <span className="font-bold text-sm">Pas Foto 4K</span>}
-          </button>
-
-          <button onClick={() => switchTab('bg-remover')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === 'bg-remover' ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/30' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>
-            <Eraser className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && <span className="font-bold text-sm">Hapus Background</span>}
-          </button>
-        </nav>
-
-        <div className="p-6">
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="w-full flex items-center justify-center py-3 bg-slate-800 rounded-2xl hover:bg-slate-700 transition-colors border border-slate-700/50 shadow-inner">
-            {isSidebarOpen ? <X className="w-4 h-4 text-slate-400" /> : <Menu className="w-4 h-4 text-slate-400" />}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Area */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
-        <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 z-40 sticky top-0 shadow-sm">
-          <div className="flex items-center gap-6">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">
-              {activeTab === 'home' ? 'Dashboard' : 
-               activeTab === 'image-generator' ? 'AI Image Generator' :
-               activeTab === 'enhancer' ? 'Enhancer 4K' : 
-               activeTab === 'pas-foto' ? 'Pas Foto Ultra HD' : 'Remover HD'}
-            </h2>
-            <div className="h-6 w-px bg-slate-100 hidden sm:block"></div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Koneksi AI Aktif
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-             <div className="px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
-               <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-               <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">Ultra Quality Enabled</span>
-             </div>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-6 md:p-12">
-          {activeTab === 'home' && renderHome()}
-          {activeTab === 'image-generator' && renderImageGenerator()}
-          {activeTab === 'enhancer' && renderToolLayout('Enhancer 4K', <Maximize2 className="w-5 h-5" />, enhanceImage, 'enhancer')}
-          {activeTab === 'pas-foto' && renderToolLayout('Pas Foto Ultra HD', <User className="w-5 h-5" />, generatePasFoto, 'pas-foto')}
-          {activeTab === 'bg-remover' && renderToolLayout('Background Remover HD', <Eraser className="w-5 h-5" />, removeBackground, 'bg-remover')}
-        </main>
-      </div>
-
-      <style>{`
-        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
-      `}</style>
-    </div>
-  );
-};
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #bfdbfe; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
 
-export default App;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Halaman Login -->
+    <div id="login-page" class="fixed inset-0 z-[100] bg-blue-900 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-fade-in">
+            <div class="p-8 text-center bg-blue-50">
+                <div class="w-24 h-24 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-md p-2">
+                    <img src="https://iili.io/3b1SedN.png" alt="Logo SDN 22 Tanah Keras" class="w-full h-full object-contain">
+                </div>
+                <h1 class="text-2xl font-black text-blue-900 uppercase">Login Portal</h1>
+                <p class="text-sm text-blue-700 font-medium">SDN 22 Tanah Keras</p>
+            </div>
+            <form id="login-form" class="p-8 space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Username</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-5 h-5 absolute left-3 top-3 text-gray-300"></i>
+                        <input type="text" id="username" required placeholder="Masukkan username" 
+                            class="w-full pl-10 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-blue-500 outline-none transition-all">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Kata Sandi</label>
+                    <div class="relative">
+                        <i data-lucide="key-round" class="w-5 h-5 absolute left-3 top-3 text-gray-300"></i>
+                        <input type="password" id="password" required placeholder="Masukkan sandi" 
+                            class="w-full pl-10 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-blue-500 outline-none transition-all">
+                    </div>
+                </div>
+                <div id="login-error" class="hidden text-red-500 text-xs font-bold bg-red-50 p-3 rounded-lg text-center border border-red-100">
+                    Username atau Sandi Salah!
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 uppercase tracking-wider">
+                    Masuk ke Sistem
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Aplikasi Dashboard Utama -->
+    <div id="main-app" class="hidden-section">
+        <div class="flex h-screen overflow-hidden">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-blue-900 text-white flex flex-col transition-all duration-300">
+                <div class="p-6 text-center border-b border-blue-800">
+                    <div class="w-16 h-16 bg-white rounded-xl mx-auto mb-3 flex items-center justify-center shadow-lg p-1">
+                        <img src="https://iili.io/3b1SedN.png" alt="Logo SD" class="w-full h-full object-contain">
+                    </div>
+                    <h1 class="text-sm font-bold uppercase tracking-wider">SDN 22 Tanah Keras</h1>
+                    <p class="text-xs text-blue-300 mt-1 italic">E-Arsip Digital</p>
+                </div>
+
+                <nav class="flex-1 mt-6 px-4 space-y-2">
+                    <button onclick="showSection('beranda')" id="btn-beranda" class="sidebar-link w-full flex items-center p-3 rounded-lg transition-colors hover:bg-blue-800 active">
+                        <i data-lucide="home" class="w-5 h-5 mr-3"></i>
+                        <span>Beranda</span>
+                    </button>
+                    <button onclick="showSection('form-arsip')" id="btn-form-arsip" class="sidebar-link w-full flex items-center p-3 rounded-lg transition-colors hover:bg-blue-800">
+                        <i data-lucide="file-plus" class="w-5 h-5 mr-3"></i>
+                        <span>Form Arsip</span>
+                    </button>
+                    <button onclick="showSection('laporan')" id="btn-laporan" class="sidebar-link w-full flex items-center p-3 rounded-lg transition-colors hover:bg-blue-800">
+                        <i data-lucide="database" class="w-5 h-5 mr-3"></i>
+                        <span>Laporan Arsip</span>
+                    </button>
+                </nav>
+
+                <div class="p-4 border-t border-blue-800 flex justify-between items-center">
+                    <span class="text-[10px] text-blue-400 uppercase">Status Sync:</span>
+                    <div id="sync-status" class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                </div>
+            </aside>
+
+            <!-- Konten Utama -->
+            <main class="flex-1 overflow-y-auto bg-gray-50">
+                <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
+                    <h2 id="page-title" class="text-xl font-bold text-gray-800">Beranda</h2>
+                    <div class="flex items-center space-x-4 relative">
+                        <button onclick="fetchDataFromSheet()" title="Sinkronisasi Data" class="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                            <i data-lucide="refresh-cw" id="sync-icon" class="w-5 h-5"></i>
+                        </button>
+                        <span id="current-date" class="hidden md:inline-block text-sm text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full"></span>
+                        
+                        <div class="relative group">
+                            <button id="user-menu-btn" onclick="toggleUserMenu()" class="w-10 h-10 bg-white border-2 border-blue-600 rounded-full flex items-center justify-center shadow-md overflow-hidden hover:scale-105 transition-all active:scale-95">
+                                <img src="https://iili.io/3b1SedN.png" alt="User" class="w-8 h-8 object-contain">
+                            </button>
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 animate-fade-in">
+                                <div class="px-4 py-3 border-b border-gray-50 flex items-center space-x-3">
+                                    <img src="https://iili.io/3b1SedN.png" alt="Logo Kecil" class="w-6 h-6 object-contain">
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase">Administrator</p>
+                                        <p class="text-xs font-bold text-blue-900">SDN 22 TK</p>
+                                    </div>
+                                </div>
+                                <button onclick="logout()" class="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
+                                    <i data-lucide="log-out" class="w-4 h-4 mr-3"></i>
+                                    Keluar (Logout)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="p-8 max-w-6xl mx-auto">
+                    <!-- Section: Beranda -->
+                    <section id="section-beranda">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
+                                <div class="p-4 bg-blue-50 text-blue-600 rounded-xl">
+                                    <i data-lucide="files" class="w-8 h-8"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-400 uppercase">Total Arsip Tersinkron</p>
+                                    <h3 id="stat-total" class="text-3xl font-black text-blue-900">0</h3>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
+                                <div class="p-4 bg-green-50 text-green-600 rounded-xl">
+                                    <i data-lucide="cloud-check" class="w-8 h-8"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-400 uppercase">Status Cloud Storage</p>
+                                    <h3 class="text-3xl font-black text-green-700">Terhubung</h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="p-6 border-b bg-gradient-to-r from-blue-50 to-transparent flex items-center space-x-4">
+                                <img src="https://iili.io/3b1SedN.png" alt="SD Logo" class="w-10 h-10 object-contain">
+                                <h3 class="font-bold text-lg text-blue-900">Selamat Datang di Portal Arsip Digital Terpadu</h3>
+                            </div>
+                            <div class="p-6">
+                                <p class="text-gray-600 leading-relaxed text-lg">
+                                    Aplikasi ini sekarang terhubung langsung dengan <b>Google Sheets</b> dan <b>Google Drive</b> melalui URL yang Anda berikan. 
+                                    Semua data yang diunggah akan tersimpan otomatis di Folder 'ARSIP' di Drive Anda dan tercatat di Sheet laporan secara real-time.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section: Form Arsip -->
+                    <section id="section-form-arsip" class="hidden-section">
+                        <div class="max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mx-auto">
+                            <div class="p-6 bg-blue-900 text-white flex items-center space-x-3">
+                                <i data-lucide="file-up" class="w-6 h-6"></i>
+                                <h3 class="font-bold text-lg">Input Arsip ke Cloud</h3>
+                            </div>
+                            <form id="upload-form" class="p-8 space-y-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Nama Dokumen</label>
+                                    <input type="text" id="docName" required placeholder="Contoh: Laporan Dana BOS 2024" 
+                                        class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-blue-500 outline-none font-medium">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Unggah Berkas (PDF/Gambar/Doc)</label>
+                                    <div id="dropzone" class="relative border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center hover:border-blue-500 hover:bg-blue-50 cursor-pointer bg-gray-50 transition-all">
+                                        <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                        <div id="file-placeholder">
+                                            <i data-lucide="upload-cloud" class="w-8 h-8 text-blue-600 mx-auto mb-2"></i>
+                                            <p class="text-sm font-bold text-gray-600">Klik untuk pilih file</p>
+                                        </div>
+                                        <div id="file-info" class="hidden">
+                                            <p id="selected-filename" class="font-bold text-gray-800 truncate px-4"></p>
+                                            <p id="selected-filesize" class="text-xs font-medium text-gray-500"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" id="btn-submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-all flex justify-center items-center disabled:bg-gray-400">
+                                    <span id="btn-text" class="flex items-center">
+                                        <i data-lucide="cloud-upload" class="w-6 h-6 mr-3"></i> SIMPAN KE GOOGLE CLOUD
+                                    </span>
+                                    <span id="btn-loader" class="hidden"><div class="loader mr-2"></div> Memproses...</span>
+                                </button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <!-- Section: Laporan -->
+                    <section id="section-laporan" class="hidden-section">
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="p-6 border-b flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50">
+                                <h3 class="font-black text-xl text-gray-800 uppercase tracking-tighter">Daftar Laporan (Live Sync)</h3>
+                                <div class="relative w-full md:w-auto">
+                                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari dokumen..." class="w-full md:w-64 pl-10 pr-4 py-2.5 border-2 border-gray-100 rounded-xl text-sm outline-none focus:border-blue-500">
+                                    <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-3"></i>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase w-16">No</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase">Nama Dokumen</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase">Tgl Upload</th>
+                                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase text-center w-32">Link File</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-body" class="divide-y divide-gray-100">
+                                        <tr><td colspan="4" class="p-10 text-center"><div class="loader"></div> Menghubungkan ke server...</td></tr>
+                                    </tbody>
+                                </table>
+                                <div id="empty-state" class="hidden p-20 text-center">
+                                    <i data-lucide="folder-search" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+                                    <p class="text-gray-300 font-bold uppercase tracking-widest">Belum Ada Data di Sheet</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-8 right-8 bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl transition-all duration-500 transform translate-y-32 opacity-0 flex items-center z-[200]">
+        <div id="toast-icon-container" class="bg-green-500 p-1.5 rounded-full mr-3">
+            <i id="toast-icon" data-lucide="check" class="w-4 h-4 text-white"></i>
+        </div>
+        <span id="toast-msg" class="font-bold text-sm"></span>
+    </div>
+
+    <script>
+        // --- KONFIGURASI GOOGLE APPS SCRIPT TERHUBUNG ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPLTaTRUlSl1yfSL1CHMdQgvYh-51RSF3UB_1zFt7thf3yDXJJzJM4ELHchCsFpp_x/exec"; 
+
+        let archiveData = [];
+
+        // SISTEM LOGIN
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+
+            // Kredensial Akses
+            if (user === "SDN22TK" && pass === "12345") {
+                document.getElementById('login-page').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden-section');
+                showToast("Berhasil Masuk & Sinkronisasi");
+                initIcons();
+                fetchDataFromSheet();
+            } else {
+                const err = document.getElementById('login-error');
+                err.classList.remove('hidden');
+                setTimeout(() => err.classList.add('hidden'), 3000);
+            }
+        });
+
+        function logout() {
+            if (confirm("Apakah Anda ingin keluar dari sistem?")) {
+                location.reload();
+            }
+        }
+
+        function toggleUserMenu() {
+            document.getElementById('user-dropdown').classList.toggle('hidden');
+        }
+
+        // AMBIL DATA DARI GOOGLE SHEET (SYNC)
+        async function fetchDataFromSheet() {
+            if (!SCRIPT_URL) return;
+
+            const syncIcon = document.getElementById('sync-icon');
+            syncIcon.classList.add('animate-spin');
+            
+            try {
+                // Menambahkan timestamp untuk menghindari cache browser
+                const response = await fetch(SCRIPT_URL + "?action=read&t=" + new Date().getTime());
+                const data = await response.json();
+                
+                // Cek jika data valid (Array)
+                if (Array.isArray(data)) {
+                    archiveData = data;
+                    renderTable(data);
+                    updateStats();
+                    document.getElementById('sync-status').classList.replace('bg-red-500', 'bg-green-500');
+                } else {
+                    console.error("Data bukan array:", data);
+                    renderTable([]);
+                }
+            } catch (error) {
+                console.error("Gagal sinkronisasi:", error);
+                document.getElementById('sync-status').classList.replace('bg-green-500', 'bg-red-500');
+                showToast("Gagal Sinkronisasi!", "danger");
+            } finally {
+                syncIcon.classList.remove('animate-spin');
+            }
+        }
+
+        // PROSES UNGGAH KE GOOGLE DRIVE & SHEET
+        const fileInput = document.getElementById('fileInput');
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('selected-filename').innerText = file.name;
+                document.getElementById('selected-filesize').innerText = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+                document.getElementById('file-placeholder').classList.add('hidden');
+                document.getElementById('file-info').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const docName = document.getElementById('docName').value;
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // UI State Loading
+            const btn = document.getElementById('btn-submit');
+            const btnText = document.getElementById('btn-text');
+            const btnLoader = document.getElementById('btn-loader');
+            
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            btnLoader.classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = async function() {
+                const base64Data = reader.result.split(',')[1];
+                const payload = {
+                    action: "upload",
+                    docName: docName,
+                    fileName: file.name,
+                    mimeType: file.type,
+                    data: base64Data
+                };
+
+                try {
+                    const response = await fetch(SCRIPT_URL, {
+                        method: "POST",
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.status === "success") {
+                        showToast("Arsip Berhasil Disimpan!");
+                        e.target.reset();
+                        resetFileInput();
+                        await fetchDataFromSheet(); // Tarik ulang data terbaru
+                        showSection('laporan');
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    showToast("Gagal mengunggah arsip!", "danger");
+                    console.error(error);
+                } finally {
+                    btn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    btnLoader.classList.add('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = "";
+            
+            if (!data || data.length === 0) {
+                document.getElementById('empty-state').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('empty-state').classList.add('hidden');
+
+            data.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50/30 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-xs font-bold text-gray-400">${index + 1}</td>
+                    <td class="px-6 py-4 font-bold text-gray-800 text-sm">${item.docName}</td>
+                    <td class="px-6 py-4 text-xs font-medium text-gray-500">${item.date}</td>
+                    <td class="px-6 py-4 text-center">
+                        <a href="${item.url}" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-200 transition-all border border-blue-200">
+                            <i data-lucide="external-link" class="w-3 h-3 mr-2"></i> LIHAT FILE
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            initIcons();
+        }
+
+        // NAVIGASI & UTILITAS
+        function showSection(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden-section'));
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            document.getElementById(`section-${id}`).classList.remove('hidden-section');
+            document.getElementById(`btn-${id}`).classList.add('active');
+            document.getElementById('page-title').innerText = id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function resetFileInput() {
+            fileInput.value = "";
+            document.getElementById('file-info').classList.add('hidden');
+            document.getElementById('file-placeholder').classList.remove('hidden');
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').innerText = archiveData.length;
+        }
+
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-icon-container').className = type === "danger" ? "bg-red-500 p-1.5 rounded-full mr-3" : "bg-green-500 p-1.5 rounded-full mr-3";
+            toast.classList.remove('translate-y-32', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.add('translate-y-32', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        function filterTable() {
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll("#table-body tr");
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? "" : "none";
+            });
+        }
+
+        function initIcons() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
+
+        window.onload = () => {
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+            initIcons();
+        };
+    </script>
+</body>
+</html>

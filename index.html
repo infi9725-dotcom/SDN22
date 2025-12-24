@@ -26,6 +26,13 @@
         .card-stat-keluar { border-left: 4px solid #16a34a; }
         .card-stat-arsip { border-left: 4px solid #9333ea; }
         .card-stat-user { border-left: 4px solid #eab308; }
+
+        /* Login Styling Refinement */
+        .login-glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -53,20 +60,48 @@
         </div>
     </div>
 
-    <!-- Login Screen -->
-    <div id="login-screen" class="fixed inset-0 z-[100] bg-blue-900 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 space-y-4">
-            <div class="text-center">
-                <img src="https://iili.io/3b1SedN.png" alt="Logo" class="h-16 mx-auto mb-3">
-                <h1 class="text-xl font-bold text-blue-900" id="login-title">SDN 22 Tanah Keras</h1>
-                <p class="text-[10px] text-gray-400 tracking-widest uppercase">Arsip Digital</p>
+    <!-- Login Screen - Refined & Smaller -->
+    <div id="login-screen" class="fixed inset-0 z-[100] bg-blue-900 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="login-glass w-full max-w-[380px] rounded-2xl shadow-2xl p-6 md:p-8 space-y-5 fade-in">
+            <div class="text-center space-y-3">
+                <img src="https://iili.io/3b1SedN.png" alt="Logo" class="h-16 mx-auto drop-shadow-md">
+                <div>
+                    <h1 class="text-xl font-extrabold text-blue-900 tracking-tight">SDN 22 TANAH KERAS</h1>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.3em] mt-1">Sistem Arsip Digital</p>
+                </div>
             </div>
-            <form onsubmit="handleLogin(event)" class="space-y-3">
-                <input type="text" id="login-user" required placeholder="Username" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="password" id="login-pass" required placeholder="Sandi" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                <div id="login-error" class="text-red-500 text-[10px] hidden text-center italic">Akses Ditolak! Cek Username/Sandi.</div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow-lg" id="btn-login-main">Masuk</button>
+            
+            <div class="flex flex-col items-center justify-center py-2 border-y border-gray-100 space-y-1">
+                <p id="login-live-date" class="text-[10px] font-bold text-blue-600 uppercase tracking-wide"></p>
+                <p id="login-live-clock" class="text-xs font-mono font-bold text-gray-500 bg-gray-50 px-3 py-0.5 rounded-full border border-gray-100"></p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-1 flex items-center gap-1">
+                        <span>👤</span> Username
+                    </label>
+                    <input type="text" id="login-user" required placeholder="Masukkan ID Pengguna" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase ml-1 flex items-center gap-1">
+                        <span>🔒</span> Kata Sandi
+                    </label>
+                    <input type="password" id="login-pass" required placeholder="••••••••" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all">
+                </div>
+                
+                <div id="login-error" class="text-red-500 text-[11px] hidden text-center font-bold bg-red-50 py-2 rounded-lg border border-red-100 animate-pulse">
+                    ⚠️ Username atau Sandi Salah!
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-200 transition-all transform active:scale-95 flex items-center justify-center gap-2" id="btn-login-main">
+                    MASUK SEKARANG
+                </button>
             </form>
+            
+            <div class="pt-2 text-center">
+                <p class="text-[9px] text-gray-400 font-medium">© 2024 SDN 22 Tanah Keras • v2.1 Professional</p>
+            </div>
         </div>
     </div>
 
@@ -183,7 +218,8 @@
                             <div class="flex flex-col"><label class="text-[10px] text-gray-400 ml-1">Tgl Surat</label><input type="date" name="tglsurat" required class="px-3 py-2 border rounded-lg text-sm outline-none"></div>
                             <div class="flex flex-col"><label class="text-[10px] text-gray-400 ml-1">Tgl Kirim</label><input type="date" name="tglkirim" required class="px-3 py-2 border rounded-lg text-sm outline-none"></div>
                         </div>
-                        <textarea name="perihal" placeholder="Tujuan / Perihal" class="w-full px-3 py-2 border rounded-lg text-sm outline-none h-24"></textarea>
+                        <input name="tujuan" placeholder="Tujuan Surat (Contoh: Kepala Dinas)" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
+                        <textarea name="perihal" placeholder="Isi / Perihal" class="w-full px-3 py-2 border rounded-lg text-sm outline-none h-24"></textarea>
                         <button type="submit" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg btn-action">Simpan Ke Database</button>
                     </form>
                 </section>
@@ -238,7 +274,15 @@
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs text-left">
-                            <thead class="bg-green-600 text-white head-table"><tr><th class="p-3">No Surat</th><th class="p-3">Tgl Surat</th><th class="p-3">Tujuan/Perihal</th><th class="p-3">Waktu</th></tr></thead>
+                            <thead class="bg-green-600 text-white head-table">
+                                <tr>
+                                    <th class="p-3">No Surat</th>
+                                    <th class="p-3">Tgl Surat</th>
+                                    <th class="p-3">Tujuan</th>
+                                    <th class="p-3">Perihal</th>
+                                    <th class="p-3">Waktu</th>
+                                </tr>
+                            </thead>
                             <tbody id="body-keluar" class="divide-y"></tbody>
                         </table>
                     </div>
@@ -279,7 +323,8 @@
     <div id="toast" class="fixed bottom-5 right-5 bg-gray-900 text-white text-xs px-4 py-2 rounded-full shadow-2xl opacity-0 transition-opacity z-[200]">Pesan</div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxTReuThxxNlJkQ63jfGC-M_9YeLNcmsbHkoEzZXFTNIs5sc44oiYVUEto642_5r6vk/exec"; 
+        // URL Web App
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxb-iOYy7QnjsIVo_n1-lanQxjpMo5aZBD4HkBRCXnP3Ujz6niT-5yt4NFjUEoEyn3u/exec"; 
         const LOGO_URL = "https://iili.io/3b1SedN.png";
 
         let currentUser = null;
@@ -293,8 +338,20 @@
             const now = new Date();
             const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
             const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            document.getElementById('live-date').innerText = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-            document.getElementById('live-clock').innerText = now.toLocaleTimeString('id-ID') + ' WIB';
+            
+            const dayName = days[now.getDay()];
+            const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+            const clockStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' WIB';
+
+            const liveDateEl = document.getElementById('live-date');
+            const liveClockEl = document.getElementById('live-clock');
+            if(liveDateEl) liveDateEl.innerText = `${dayName}, ${dateStr}`;
+            if(liveClockEl) liveClockEl.innerText = clockStr;
+
+            const loginLiveDateEl = document.getElementById('login-live-date');
+            const loginLiveClockEl = document.getElementById('login-live-clock');
+            if(loginLiveDateEl) loginLiveDateEl.innerText = `${dayName}, ${dateStr}`;
+            if(loginLiveClockEl) loginLiveClockEl.innerText = clockStr;
         }
         setInterval(updateClock, 1000);
 
@@ -302,10 +359,6 @@
         function openSettings() { document.getElementById('modal-settings').classList.add('show'); document.getElementById('user-dropdown').classList.remove('show'); }
         function closeSettings() { document.getElementById('modal-settings').classList.remove('show'); }
 
-        /**
-         * PERBAIKAN: Fungsi handleLogin diperbarui untuk melakukan sinkronisasi
-         * data sebelum memvalidasi kredensial pengguna.
-         */
         async function handleLogin(event) {
             event.preventDefault();
             const u = document.getElementById('login-user').value.trim();
@@ -315,63 +368,37 @@
             errorMsg.classList.add('hidden');
             showLoading(true);
 
-            // Selalu ambil data terbaru dari cloud sebelum login agar user baru terdeteksi
-            try {
-                await syncDataFromCloud(); 
-            } catch (err) {
-                console.error("Gagal sinkronisasi data cloud");
-            }
-
+            try { await syncDataFromCloud(); } catch (err) { console.error("Gagal sinkronisasi data cloud"); }
             showLoading(false);
 
-            // Cari user di state yang baru disinkronkan
-            const found = state.users.find(usr => 
-                String(usr.username).toLowerCase() === u.toLowerCase() && 
-                String(usr.sandi) === p
-            );
-
-            // Cek akun Master atau akun di database
+            const found = state.users.find(usr => String(usr.username).toLowerCase() === u.toLowerCase() && String(usr.sandi) === p);
             if (found || (u === 'SDN22TK' && p === '12345')) {
                 currentUser = found || { username: 'SDN22TK', peran: 'Admin' };
                 document.getElementById('display-username').innerText = currentUser.username;
                 document.getElementById('display-role').innerText = currentUser.peran;
-                
-                // Set UI berdasarkan Role
                 document.body.classList.toggle('is-admin', currentUser.peran === 'Admin');
-                
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
                 switchTab('beranda');
-                
                 if (!mainChart) initCharts(); else updateChartData();
                 showToast("Selamat Datang, " + currentUser.username);
-            } else {
-                errorMsg.classList.remove('hidden');
-            }
+            } else { errorMsg.classList.remove('hidden'); }
         }
 
         async function syncDataFromCloud() {
-            // Gunakan cache-busting agar tidak mengambil data lama dari browser
             const timestamp = new Date().getTime();
             const urlWithCacheBuster = `${WEB_APP_URL}?t=${timestamp}`;
-            
             try {
                 const response = await fetch(urlWithCacheBuster);
                 const newData = await response.json();
-                
-                // Update Global State
                 state = newData;
                 filteredState.masuk = [...state.masuk];
                 filteredState.keluar = [...state.keluar];
                 filteredState.arsip = [...state.arsip];
-                
                 updateDisplay();
                 if(mainChart) updateChartData();
                 return true;
-            } catch (e) { 
-                showToast("Koneksi Internet Bermasalah!"); 
-                throw e;
-            }
+            } catch (e) { showToast("Koneksi Database Bermasalah!"); throw e; }
         }
 
         function initCharts() {
@@ -388,48 +415,25 @@
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, grid: { display: false } } } }
             });
-
             const ctxPie = document.getElementById('pieChart').getContext('2d');
             pieChart = new Chart(ctxPie, {
                 type: 'doughnut',
-                data: {
-                    labels: ['Surat Masuk', 'Surat Keluar', 'Arsip'],
-                    datasets: [{ data: [0, 0, 0], backgroundColor: ['#2563eb', '#16a34a', '#9333ea'] }]
-                },
+                data: { labels: ['Surat Masuk', 'Surat Keluar', 'Arsip'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#2563eb', '#16a34a', '#9333ea'] }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
             });
-
             updateChartData();
         }
 
         function updateChartData() {
             const year = new Date().getFullYear();
             const counts = { masuk: Array(12).fill(0), keluar: Array(12).fill(0), arsip: Array(12).fill(0) };
-
-            state.masuk.forEach(i => {
-                const d = new Date(i.tglsurat);
-                if(d.getFullYear() === year) counts.masuk[d.getMonth()]++;
-            });
-            state.keluar.forEach(i => {
-                const d = new Date(i.tglsurat);
-                if(d.getFullYear() === year) counts.keluar[d.getMonth()]++;
-            });
-            state.arsip.forEach(i => {
-                // Parsing timestamp dari format lokalisasi
-                if (i.timestamp) {
-                    const parts = i.timestamp.split('/');
-                    if (parts.length >= 3) {
-                        const m = parseInt(parts[1]) - 1;
-                        if (m >= 0 && m < 12) counts.arsip[m]++;
-                    }
-                }
-            });
-
+            state.masuk.forEach(i => { const d = new Date(i.tglsurat); if(d.getFullYear() === year) counts.masuk[d.getMonth()]++; });
+            state.keluar.forEach(i => { const d = new Date(i.tglsurat); if(d.getFullYear() === year) counts.keluar[d.getMonth()]++; });
+            state.arsip.forEach(i => { if (i.timestamp) { const parts = i.timestamp.split('/'); if (parts.length >= 3) { const m = parseInt(parts[1]) - 1; if (m >= 0 && m < 12) counts.arsip[m]++; } } });
             mainChart.data.datasets[0].data = counts.masuk;
             mainChart.data.datasets[1].data = counts.keluar;
             mainChart.data.datasets[2].data = counts.arsip;
             mainChart.update();
-
             pieChart.data.datasets[0].data = [state.masuk.length, state.keluar.length, state.arsip.length];
             pieChart.update();
         }
@@ -437,10 +441,7 @@
         function applyFilters(type) {
             const searchQuery = document.getElementById(`search-${type}`).value.toLowerCase();
             let start = null; let end = null;
-            if (type !== 'arsip') {
-                start = document.getElementById(`filter-${type}-start`).value;
-                end = document.getElementById(`filter-${type}-end`).value;
-            }
+            if (type !== 'arsip') { start = document.getElementById(`filter-${type}-start`).value; end = document.getElementById(`filter-${type}-end`).value; }
             filteredState[type] = state[type].filter(item => {
                 const matchesSearch = Object.values(item).some(val => String(val).toLowerCase().includes(searchQuery));
                 let matchesDate = true;
@@ -459,12 +460,25 @@
                 document.getElementById('stat-masuk').innerText = state.masuk.length;
                 document.getElementById('stat-keluar').innerText = state.keluar.length;
                 document.getElementById('stat-arsip').innerText = state.arsip.length;
-                const statUsers = document.getElementById('stat-users');
-                if(statUsers) statUsers.innerText = state.users.length;
+                const statUsers = document.getElementById('stat-users'); if(statUsers) statUsers.innerText = state.users.length;
                 renderTable('body-users', state.users, ['username', 'peran']);
             }
             renderTable('body-masuk', filteredState.masuk, ['nosurat', 'tglsurat', 'pengirim', 'perihal', 'timestamp']);
-            renderTable('body-keluar', filteredState.keluar, ['nosurat', 'tglsurat', 'perihal', 'timestamp']);
+            
+            const bKeluar = document.getElementById('body-keluar');
+            if(bKeluar) {
+                bKeluar.innerHTML = filteredState.keluar.length === 0 ? `<tr><td colspan="5" class="p-4 text-center text-gray-400">Tidak ada data</td></tr>` : 
+                filteredState.keluar.map(item => `
+                    <tr>
+                        <td class="p-3 border-b">${item.nosurat || '-'}</td>
+                        <td class="p-3 border-b">${item.tglsurat || '-'}</td>
+                        <td class="p-3 border-b font-bold text-blue-800 uppercase text-[10px]">${item.tujuan || '-'}</td>
+                        <td class="p-3 border-b text-gray-600">${item.perihal || '-'}</td>
+                        <td class="p-3 border-b">${item.timestamp || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+
             const bArsip = document.getElementById('body-arsip');
             if(bArsip) bArsip.innerHTML = filteredState.arsip.map((i, idx) => `<tr><td class="p-3 border-b">${idx + 1}</td><td class="p-3 border-b uppercase font-bold">${i.namadokumen || i.namaDokumen || '-'}</td><td class="p-3 border-b"><a href="${i.file_link}" target="_blank" class="text-blue-600 underline">Lihat File 🔗</a></td><td class="p-3 border-b text-[10px]">${i.timestamp || '-'}</td></tr>`).join('');
         }
@@ -478,16 +492,11 @@
             event.preventDefault();
             showLoading(true);
             const formData = new FormData(event.target);
-            const data = {};
-            formData.forEach((v, k) => data[k] = v);
+            const data = {}; formData.forEach((v, k) => data[k] = v);
             data.timestamp = new Date().toLocaleString('id-ID');
             try {
                 await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'saveData', type: type, data: data }) });
-                setTimeout(async () => { 
-                    await syncDataFromCloud(); 
-                    event.target.reset(); 
-                    showToast("Data Disimpan!"); 
-                }, 1500);
+                setTimeout(async () => { await syncDataFromCloud(); event.target.reset(); showToast("Data Berhasil Disimpan!"); }, 1500);
             } catch (e) { showToast("Gagal Simpan."); }
             showLoading(false);
         }
@@ -526,9 +535,25 @@
                 doc.setDrawColor(rgb.r, rgb.g, rgb.b); doc.setLineWidth(1); doc.line(15, 30, doc.internal.pageSize.getWidth() - 15, 30);
                 doc.setTextColor(0, 0, 0); doc.setFontSize(14); doc.setFont('helvetica', 'bold');
                 doc.text(title, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
-                const columns = type === 'masuk' ? [["No Surat", "Tgl Surat", "Pengirim", "Perihal", "Waktu"]] : [["No Surat", "Tgl Surat", "Perihal", "Waktu"]];
-                const rows = dataToPrint.map(i => type === 'masuk' ? [i.nosurat, i.tglsurat, i.pengirim, i.perihal, i.timestamp] : [i.nosurat, i.tglsurat, i.perihal, i.timestamp]);
-                doc.autoTable({ head: columns, body: rows, startY: 52, headStyles: { fillColor: [rgb.r, rgb.g, rgb.b] } });
+                
+                let columns = [];
+                let rows = [];
+
+                if (type === 'masuk') {
+                    columns = [["No Surat", "Tgl Surat", "Pengirim", "Perihal", "Waktu"]];
+                    rows = dataToPrint.map(i => [i.nosurat, i.tglsurat, i.pengirim, i.perihal, i.timestamp]);
+                } else {
+                    columns = [["No Surat", "Tgl Surat", "Tujuan", "Perihal", "Waktu"]];
+                    rows = dataToPrint.map(i => [i.nosurat, i.tglsurat, i.tujuan || '-', i.perihal || '-', i.timestamp]);
+                }
+                
+                doc.autoTable({ 
+                    head: columns, 
+                    body: rows, 
+                    startY: 52, 
+                    headStyles: { fillColor: [rgb.r, rgb.g, rgb.b] },
+                    styles: { fontSize: 9, cellPadding: 3 }
+                });
                 doc.save(`${title}.pdf`);
             };
         }
@@ -562,12 +587,9 @@
         function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 3000); }
 
         window.onload = () => {
-            const savedHex = localStorage.getItem('app-theme-hex');
-            if(savedHex) applyTheme(savedHex);
+            const savedHex = localStorage.getItem('app-theme-hex'); if(savedHex) applyTheme(savedHex);
             updateClock();
-            
-            // Opsional: Sinkronisasi data di awal agar data user sudah siap
-            syncDataFromCloud().catch(e => console.log("Initial sync failed, will retry on login."));
+            syncDataFromCloud().catch(e => console.log("Gagal menyambungkan ke link Apps Script."));
         };
     </script>
 </body>

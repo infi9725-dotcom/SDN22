@@ -9,21 +9,62 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s; }
+        
+        /* Sidebar transition */
+        aside, .sidebar-item.active { transition: background-color 0.3s, border-color 0.3s; }
+
         .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
-        .sidebar-item.active { background-color: #1e40af; border-left: 4px solid #fbbf24; }
         .admin-only { display: none; }
         body.is-admin .admin-only { display: flex; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
         .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 300; align-items: center; justify-content: center; flex-direction: column; }
+        
+        /* Dropdown Styling */
+        #user-dropdown { display: none; }
+        #user-dropdown.show { display: block; }
+
+        /* Modal Settings */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+
+        /* Stat Card Borders (Fixed Colors as requested) */
+        .card-stat-masuk { border-left: 4px solid #2563eb; } /* Blue */
+        .card-stat-keluar { border-left: 4px solid #16a34a; } /* Green */
+        .card-stat-arsip { border-left: 4px solid #9333ea; } /* Purple */
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-gray-50 text-gray-800 theme-blue">
 
     <div id="loading" class="loading-overlay">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-2"></div>
-        <p class="text-xs font-bold text-blue-600">Sinkronisasi Data...</p>
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-2" id="spinner"></div>
+        <p class="text-xs font-bold text-blue-600" id="loading-text">Sinkronisasi Data...</p>
+    </div>
+
+    <!-- Modal Pengaturan -->
+    <div id="modal-settings" class="modal">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-gray-800">⚙️ Pengaturan Tema</h3>
+                <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <p class="text-xs text-gray-500 mb-4">Pilih warna utama untuk aplikasi Anda:</p>
+            <div class="grid grid-cols-5 gap-3">
+                <button onclick="changeTheme('blue', '#1e3a8a')" class="w-full aspect-square rounded-lg bg-blue-900 border-2 border-transparent hover:scale-105 transition-all" title="Biru"></button>
+                <button onclick="changeTheme('black', '#111827')" class="w-full aspect-square rounded-lg bg-gray-900 border-2 border-transparent hover:scale-105 transition-all" title="Hitam"></button>
+                <button onclick="changeTheme('red', '#991b1b')" class="w-full aspect-square rounded-lg bg-red-800 border-2 border-transparent hover:scale-105 transition-all" title="Merah"></button>
+                <button onclick="changeTheme('green', '#065f46')" class="w-full aspect-square rounded-lg bg-green-800 border-2 border-transparent hover:scale-105 transition-all" title="Hijau"></button>
+                <button onclick="changeTheme('purple', '#581c87')" class="w-full aspect-square rounded-lg bg-purple-900 border-2 border-transparent hover:scale-105 transition-all" title="Ungu"></button>
+                <button onclick="changeTheme('pink', '#9d174d')" class="w-full aspect-square rounded-lg bg-pink-800 border-2 border-transparent hover:scale-105 transition-all" title="Pink"></button>
+                <button onclick="changeTheme('orange', '#9a3412')" class="w-full aspect-square rounded-lg bg-orange-800 border-2 border-transparent hover:scale-105 transition-all" title="Orange"></button>
+                <button onclick="changeTheme('yellow', '#854d0e')" class="w-full aspect-square rounded-lg bg-yellow-700 border-2 border-transparent hover:scale-105 transition-all" title="Kuning"></button>
+                <button onclick="changeTheme('jingga', '#c2410c')" class="w-full aspect-square rounded-lg bg-orange-600 border-2 border-transparent hover:scale-105 transition-all" title="Jingga"></button>
+                <button onclick="changeTheme('brown', '#78350f')" class="w-full aspect-square rounded-lg bg-amber-900 border-2 border-transparent hover:scale-105 transition-all" title="Coklat"></button>
+            </div>
+            <button onclick="closeSettings()" class="w-full mt-6 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg transition-all">Selesai</button>
+        </div>
     </div>
 
     <!-- Screen Login -->
@@ -31,21 +72,21 @@
         <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 space-y-4">
             <div class="text-center">
                 <img src="https://iili.io/3b1SedN.png" alt="Logo" class="h-16 mx-auto mb-3 object-contain">
-                <h1 class="text-xl font-bold text-blue-900 leading-tight">SDN 22</h1>
+                <h1 class="text-xl font-bold text-blue-900 leading-tight" id="login-title">SDN 22</h1>
                 <p class="text-[10px] text-gray-500 font-medium tracking-widest uppercase">Tanah Keras - Arsip Digital</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-3">
                 <input type="text" id="login-user" required placeholder="Username" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 <input type="password" id="login-pass" required placeholder="Sandi" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 <div id="login-error" class="text-red-500 text-[10px] hidden italic text-center">Username atau Sandi salah!</div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg shadow-lg transition-all">Masuk</button>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg shadow-lg transition-all" id="btn-login-main">Masuk</button>
             </form>
         </div>
     </div>
 
     <div id="app" class="flex min-h-screen hidden">
-        <aside class="w-56 bg-blue-900 text-white flex-shrink-0 flex flex-col shadow-xl">
-            <div class="p-5 border-b border-blue-800 text-center">
+        <aside id="sidebar" class="w-56 bg-blue-900 text-white flex-shrink-0 flex flex-col shadow-xl">
+            <div class="p-5 border-b border-white/10 text-center">
                 <img src="https://iili.io/3b1SedN.png" alt="Logo" class="h-10 mx-auto mb-2">
                 <h1 class="text-lg font-bold text-yellow-400">SDN 22</h1>
             </div>
@@ -59,92 +100,115 @@
                 <button onclick="switchTab('laporan-keluar')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-keluar">📈 Lap. Keluar</button>
                 <button onclick="switchTab('laporan-arsip')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-arsip">🗂️ Lap. Arsip</button>
             </nav>
-            <button onclick="syncDataFromCloud()" class="bg-blue-800 p-2 text-[10px] font-bold text-blue-200 hover:bg-blue-700 transition-all">🔄 SINKRON SEKARANG</button>
+            <button id="btn-sync" onclick="syncDataFromCloud()" class="bg-black/20 p-2 text-[10px] font-bold text-white/70 hover:bg-black/40 transition-all">🔄 SINKRON SEKARANG</button>
         </aside>
 
         <main class="flex-1 flex flex-col overflow-hidden">
-            <header class="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
+            <header class="bg-white shadow-sm px-6 py-3 flex justify-between items-center relative z-50">
                 <h2 id="page-title" class="text-xl font-bold text-gray-700">Beranda</h2>
+                
                 <div class="flex items-center gap-6">
-                    <div class="hidden md:flex flex-col items-end text-right">
+                    <div class="hidden md:flex flex-col items-end text-right border-r pr-6 border-gray-100">
                         <p id="live-date" class="text-[10px] font-bold text-blue-800 uppercase tracking-wider"></p>
                         <p id="live-clock" class="text-sm font-bold text-gray-600 font-mono"></p>
                     </div>
-                    <button onclick="handleLogout()" class="text-xs text-red-600 font-bold bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-100 transition-all">Keluar 🚪</button>
+
+                    <div class="relative">
+                        <button onclick="toggleUserDropdown()" class="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg transition-all group">
+                            <div class="text-right">
+                                <p id="display-username" class="text-sm font-bold text-blue-900 leading-none">User</p>
+                                <p id="display-role" class="text-[9px] text-gray-400 font-medium uppercase mt-1">Role</p>
+                            </div>
+                            <div id="user-avatar" class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xs group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                👤
+                            </div>
+                        </button>
+
+                        <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden fade-in">
+                            <div class="p-2 border-b border-gray-50 bg-gray-50/50">
+                                <p class="text-[9px] text-gray-400 font-bold uppercase px-2">Opsi Akun</p>
+                            </div>
+                            <button onclick="openSettings()" class="w-full text-left px-4 py-3 text-sm text-gray-700 font-medium hover:bg-gray-50 flex items-center gap-2 transition-all border-b border-gray-50">
+                                <span class="text-lg">⚙️</span> Pengaturan Tema
+                            </button>
+                            <button onclick="handleLogout()" class="w-full text-left px-4 py-3 text-sm text-red-600 font-bold hover:bg-red-50 flex items-center gap-2 transition-all">
+                                <span class="text-lg">🚪</span> Keluar Aplikasi
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </header>
 
             <div class="p-6 overflow-y-auto flex-1" id="main-content">
-                <!-- Section Beranda -->
+                <!-- Beranda Section with Fixed Colors for Stats -->
                 <section id="section-beranda" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="bg-white p-5 rounded-xl border-l-4 border-blue-600 shadow-sm">
+                        <!-- Surat Masuk - Fixed Blue -->
+                        <div class="bg-white p-5 rounded-xl card-stat card-stat-masuk shadow-sm">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Surat Masuk</h3>
                             <p id="stat-masuk" class="text-2xl font-bold text-blue-600">0</p>
                         </div>
-                        <div class="bg-white p-5 rounded-xl border-l-4 border-green-600 shadow-sm">
+                        <!-- Surat Keluar - Fixed Green -->
+                        <div class="bg-white p-5 rounded-xl card-stat card-stat-keluar shadow-sm">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Surat Keluar</h3>
                             <p id="stat-keluar" class="text-2xl font-bold text-green-600">0</p>
                         </div>
-                        <div class="admin-only bg-white p-5 rounded-xl border-l-4 border-purple-600 shadow-sm">
+                        <!-- Total Arsip - Fixed Purple -->
+                        <div class="admin-only bg-white p-5 rounded-xl card-stat card-stat-arsip shadow-sm">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Total Arsip</h3>
                             <p id="stat-arsip" class="text-2xl font-bold text-purple-600">0</p>
                         </div>
                     </div>
                 </section>
 
-                <!-- Section Input Masuk -->
                 <section id="section-surat-masuk" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Input Surat Masuk</h3>
                     <form onsubmit="saveToCloud(event, 'masuk')" class="space-y-3">
-                        <input name="nosurat" placeholder="No. Surat" required class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <input name="nosurat" placeholder="No. Surat" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
                         <div class="grid grid-cols-2 gap-2">
-                            <input type="date" name="tglsurat" required class="px-3 py-2 border rounded-lg text-sm">
-                            <input type="date" name="tglterima" required class="px-3 py-2 border rounded-lg text-sm">
+                            <input type="date" name="tglsurat" required class="px-3 py-2 border rounded-lg text-sm outline-none">
+                            <input type="date" name="tglterima" required class="px-3 py-2 border rounded-lg text-sm outline-none">
                         </div>
-                        <input name="pengirim" placeholder="Pengirim" required class="w-full px-3 py-2 border rounded-lg text-sm">
-                        <textarea name="perihal" placeholder="Perihal" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
-                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg">Simpan ke Cloud</button>
+                        <input name="pengirim" placeholder="Pengirim" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
+                        <textarea name="perihal" placeholder="Perihal" class="w-full px-3 py-2 border rounded-lg text-sm outline-none"></textarea>
+                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg btn-action">Simpan ke Cloud</button>
                     </form>
                 </section>
 
-                <!-- Section Input Keluar -->
                 <section id="section-surat-keluar" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Input Surat Keluar</h3>
                     <form onsubmit="saveToCloud(event, 'keluar')" class="space-y-3">
-                        <input name="nosurat" placeholder="No. Surat" required class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <input name="nosurat" placeholder="No. Surat" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
                         <div class="grid grid-cols-2 gap-2">
-                            <input type="date" name="tglsurat" required class="px-3 py-2 border rounded-lg text-sm">
-                            <input type="date" name="tglkirim" required class="px-3 py-2 border rounded-lg text-sm">
+                            <input type="date" name="tglsurat" required class="px-3 py-2 border rounded-lg text-sm outline-none">
+                            <input type="date" name="tglkirim" required class="px-3 py-2 border rounded-lg text-sm outline-none">
                         </div>
-                        <textarea name="perihal" placeholder="Perihal / Tujuan" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
-                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg">Simpan ke Cloud</button>
+                        <textarea name="perihal" placeholder="Tujuan / Perihal" class="w-full px-3 py-2 border rounded-lg text-sm outline-none"></textarea>
+                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg btn-action">Simpan ke Cloud</button>
                     </form>
                 </section>
 
-                <!-- Section Arsip -->
                 <section id="section-arsip" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Upload ke Google Drive ARSIP</h3>
                     <form onsubmit="handleFileUpload(event)" class="space-y-4">
-                        <input name="namaDokumen" id="arsip-nama" placeholder="Nama Dokumen" required class="w-full px-3 py-2 border rounded-lg text-sm">
-                        <div class="border-2 border-dashed p-10 text-center rounded-xl bg-gray-50 hover:bg-purple-50 transition-colors">
+                        <input name="namaDokumen" id="arsip-nama" placeholder="Nama Dokumen" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
+                        <div class="border-2 border-dashed p-10 text-center rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                             <input type="file" id="file-input" required class="text-xs">
                             <p class="text-[10px] text-gray-400 mt-2">File akan tersimpan di folder ARSIP Google Drive</p>
                         </div>
-                        <button type="submit" class="w-full bg-purple-600 text-white font-bold py-2 rounded-lg shadow-lg">Upload & Simpan Link</button>
+                        <button type="submit" class="w-full bg-purple-600 text-white font-bold py-2 rounded-lg shadow-lg btn-action">Upload & Simpan Link</button>
                     </form>
                 </section>
 
-                <!-- Tables -->
                 <section id="section-laporan-masuk" class="hidden bg-white rounded-xl shadow-sm overflow-hidden">
                     <div class="p-4 border-b flex justify-between items-center bg-gray-50">
                         <h3 class="font-bold text-sm">Laporan Surat Masuk</h3>
-                        <button onclick="downloadPDF('masuk')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-2">
+                        <button onclick="downloadPDF('masuk')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-2 transition-all">
                             📄 DOWNLOAD PDF (LEGAL)
                         </button>
                     </div>
                     <table class="w-full text-xs text-left">
-                        <thead class="bg-blue-600 text-white"><tr><th class="p-3">No Surat</th><th class="p-3">Tgl Surat</th><th class="p-3">Pengirim</th><th class="p-3">Timestamp</th></tr></thead>
+                        <thead class="bg-blue-600 text-white head-table"><tr><th class="p-3">No Surat</th><th class="p-3">Tgl Surat</th><th class="p-3">Pengirim</th><th class="p-3">Timestamp</th></tr></thead>
                         <tbody id="body-masuk" class="divide-y"></tbody>
                     </table>
                 </section>
@@ -152,27 +216,26 @@
                 <section id="section-laporan-keluar" class="hidden bg-white rounded-xl shadow-sm overflow-hidden">
                     <div class="p-4 border-b flex justify-between items-center bg-gray-50">
                         <h3 class="font-bold text-sm">Laporan Surat Keluar</h3>
-                        <button onclick="downloadPDF('keluar')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-2">
+                        <button onclick="downloadPDF('keluar')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-2 transition-all">
                             📄 DOWNLOAD PDF (LEGAL)
                         </button>
                     </div>
                     <table class="w-full text-xs text-left">
-                        <thead class="bg-green-600 text-white"><tr><th class="p-3">No Surat</th><th class="p-3">Tgl Kirim</th><th class="p-3">Tujuan / Perihal</th><th class="p-3">Timestamp</th></tr></thead>
+                        <thead class="bg-green-600 text-white head-table"><tr><th class="p-3">No Surat</th><th class="p-3">Tgl Kirim</th><th class="p-3">Tujuan / Perihal</th><th class="p-3">Timestamp</th></tr></thead>
                         <tbody id="body-keluar" class="divide-y"></tbody>
                     </table>
                 </section>
 
                 <section id="section-laporan-arsip" class="hidden bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-4 border-b flex justify-between items-center">
+                    <div class="p-4 border-b flex justify-between items-center bg-gray-50">
                         <h3 class="font-bold text-sm">Laporan Arsip Digital</h3>
                     </div>
                     <table class="w-full text-xs text-left">
-                        <thead class="bg-purple-600 text-white"><tr><th class="p-3">NO</th><th class="p-3">NAMA DOKUMEN</th><th class="p-3">FILE (LINK DRIVE)</th><th class="p-3">WAKTU</th></tr></thead>
+                        <thead class="bg-purple-600 text-white head-table"><tr><th class="p-3">NO</th><th class="p-3">NAMA DOKUMEN</th><th class="p-3">FILE (LINK DRIVE)</th><th class="p-3">WAKTU</th></tr></thead>
                         <tbody id="body-arsip" class="divide-y"></tbody>
                     </table>
                 </section>
 
-                <!-- Section User -->
                 <section id="section-manajemen-user" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Tambah Akun Baru</h3>
                     <form onsubmit="saveToCloud(event, 'users')" class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-6">
@@ -182,7 +245,7 @@
                             <option value="Admin">Admin</option>
                             <option value="User">User</option>
                         </select>
-                        <button type="submit" class="md:col-span-3 bg-yellow-500 text-white font-bold py-2 rounded-lg text-sm">Simpan User</button>
+                        <button type="submit" class="md:col-span-3 bg-yellow-500 text-white font-bold py-2 rounded-lg text-sm btn-action">Simpan User</button>
                     </form>
                     <table class="w-full text-xs text-left border rounded-lg">
                         <thead class="bg-gray-100"><tr><th class="p-2">User</th><th class="p-2">Role</th></tr></thead>
@@ -196,46 +259,73 @@
     <div id="toast" class="fixed bottom-5 right-5 bg-gray-900 text-white text-xs px-4 py-2 rounded-full shadow-2xl opacity-0 transition-opacity z-[200]">Pesan</div>
 
     <script>
-        // URL Apps Script Anda yang telah diperbarui
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxTReuThxxNlJkQ63jfGC-M_9YeLNcmsbHkoEzZXFTNIs5sc44oiYVUEto642_5r6vk/exec"; 
         const LOGO_URL = "https://iili.io/3b1SedN.png";
 
         let currentUser = null;
         let state = { masuk: [], keluar: [], arsip: [], users: [] };
+        let currentThemeColor = '#1e3a8a'; 
 
-        // Real-time Clock Function
+        function openSettings() {
+            document.getElementById('modal-settings').classList.add('show');
+            document.getElementById('user-dropdown').classList.remove('show');
+        }
+
+        function closeSettings() {
+            document.getElementById('modal-settings').classList.remove('show');
+        }
+
+        function changeTheme(themeName, hex) {
+            currentThemeColor = hex;
+            
+            const themes = ['blue', 'black', 'red', 'green', 'purple', 'pink', 'orange', 'yellow', 'jingga', 'brown'];
+            themes.forEach(t => document.body.classList.remove('theme-' + t));
+            document.body.classList.add('theme-' + themeName);
+
+            const sidebar = document.getElementById('sidebar');
+            const loginScreen = document.getElementById('login-screen');
+            const loginTitle = document.getElementById('login-title');
+            const btnLogin = document.getElementById('btn-login-main');
+            
+            sidebar.style.backgroundColor = hex;
+            loginScreen.style.backgroundColor = hex;
+            loginTitle.style.color = hex;
+            btnLogin.style.backgroundColor = hex;
+            
+            // Only update buttons and general components, keeping Beranda cards as requested
+            document.querySelectorAll('.btn-action').forEach(btn => btn.style.backgroundColor = hex);
+            document.querySelectorAll('.head-table').forEach(h => h.style.backgroundColor = hex);
+            document.querySelectorAll('.sidebar-item.active').forEach(b => b.style.backgroundColor = 'rgba(0,0,0,0.2)');
+
+            showToast("Tema Berhasil Diubah ke " + themeName.toUpperCase());
+        }
+
         function updateClock() {
             const now = new Date();
             const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
             const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            
-            const dayName = days[now.getDay()];
-            const date = now.getDate();
-            const monthName = months[now.getMonth()];
-            const year = now.getFullYear();
-            
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-
-            const dateStr = `${dayName}, ${date} ${monthName} ${year}`;
-            const timeStr = `${hours}:${minutes}:${seconds} WIB`;
-
-            const dateEl = document.getElementById('live-date');
-            const clockEl = document.getElementById('live-clock');
-            
-            if(dateEl) dateEl.innerText = dateStr;
-            if(clockEl) clockEl.innerText = timeStr;
+            document.getElementById('live-date').innerText = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+            document.getElementById('live-clock').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')} WIB`;
         }
 
         setInterval(updateClock, 1000);
         updateClock();
 
+        function toggleUserDropdown() {
+            document.getElementById('user-dropdown').classList.toggle('show');
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('#app header') && !event.target.closest('#modal-settings')) {
+                document.getElementById('user-dropdown').classList.remove('show');
+            }
+            if (event.target == document.getElementById('modal-settings')) closeSettings();
+        }
+
         async function handleLogin(event) {
             event.preventDefault();
             const u = document.getElementById('login-user').value;
             const p = document.getElementById('login-pass').value;
-            
             showLoading(true);
             await syncDataFromCloud(); 
             showLoading(false);
@@ -243,6 +333,8 @@
             const found = state.users.find(usr => usr.username === u && usr.sandi === p);
             if (found || (u === 'SDN22TK' && p === '12345')) {
                 currentUser = found || { username: 'SDN22TK', peran: 'Admin' };
+                document.getElementById('display-username').innerText = currentUser.username;
+                document.getElementById('display-role').innerText = currentUser.peran;
                 document.body.classList.toggle('is-admin', currentUser.peran === 'Admin');
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
@@ -258,12 +350,10 @@
             showLoading(true);
             try {
                 const response = await fetch(WEB_APP_URL);
-                const cloudData = await response.json();
-                state = cloudData;
+                state = await response.json();
                 updateDisplay();
             } catch (e) {
                 showToast("Gagal Sinkron: Cek URL Apps Script");
-                console.error(e);
             }
             showLoading(false);
         }
@@ -275,179 +365,76 @@
             const data = {};
             formData.forEach((v, k) => data[k] = v);
             data.timestamp = new Date().toLocaleString();
-
             try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ action: 'saveData', type: type, data: data })
-                });
-                setTimeout(async () => {
-                    await syncDataFromCloud();
-                    event.target.reset();
-                    showToast("Data Tersimpan ke Google Sheet!");
-                }, 1000);
-            } catch (e) {
-                showToast("Terjadi kesalahan koneksi");
-            }
+                await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'saveData', type: type, data: data }) });
+                setTimeout(async () => { await syncDataFromCloud(); event.target.reset(); showToast("Data Tersimpan!"); }, 1000);
+            } catch (e) { showToast("Gagal simpan"); }
             showLoading(false);
         }
 
         async function handleFileUpload(event) {
             event.preventDefault();
-            const fileInput = document.getElementById('file-input');
-            const file = fileInput.files[0];
+            const file = document.getElementById('file-input').files[0];
             const nama = document.getElementById('arsip-nama').value;
-            
             if (!file) return;
-
             showLoading(true);
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = async () => {
                 const base64 = reader.result.split(',')[1];
                 try {
-                    await fetch(WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        body: JSON.stringify({
-                            action: 'saveFile',
-                            data: {
-                                fileName: file.name,
-                                mimeType: file.type,
-                                base64: base64,
-                                namaDokumen: nama
-                            }
-                        })
-                    });
-                    
-                    setTimeout(async () => {
-                        showToast("File Berhasil diupload ke Drive!");
-                        await syncDataFromCloud();
-                        event.target.reset();
-                        document.getElementById('arsip-nama').value = "";
-                    }, 2000);
-                } catch (e) {
-                    showToast("Gagal upload file");
-                }
+                    await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'saveFile', data: { fileName: file.name, mimeType: file.type, base64: base64, namaDokumen: nama } }) });
+                    setTimeout(async () => { showToast("Upload Berhasil!"); await syncDataFromCloud(); event.target.reset(); }, 2000);
+                } catch (e) { showToast("Gagal upload"); }
                 showLoading(false);
             };
         }
 
         function downloadPDF(type) {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'legal'
-            });
-
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'legal' });
             const title = type === 'masuk' ? 'LAPORAN SURAT MASUK' : 'LAPORAN SURAT KELUAR';
             const tableData = state[type];
-            const timestamp = new Date().toLocaleString('id-ID');
-            const pageWidth = doc.internal.pageSize.getWidth();
-
-            const img = new Image();
-            img.src = LOGO_URL;
-            img.crossOrigin = "Anonymous";
-
+            const img = new Image(); img.src = LOGO_URL; img.crossOrigin = "Anonymous";
             img.onload = function() {
-                doc.setFontSize(18);
-                doc.setTextColor(30, 64, 175);
-                doc.text("SDN 22 TANAH KERAS", 15, 15);
-                
-                doc.setFontSize(10);
-                doc.setTextColor(100, 100, 100);
-                doc.text("Sistem Informasi Arsip Digital Sekolah", 15, 20);
-
-                doc.addImage(img, 'PNG', pageWidth - 35, 10, 20, 20);
-
-                doc.setDrawColor(30, 64, 175);
-                doc.setLineWidth(0.5);
-                doc.line(15, 32, pageWidth - 15, 32);
-
-                doc.setFontSize(14);
-                doc.setTextColor(0, 0, 0);
-                doc.text(title, pageWidth / 2, 42, { align: 'center' });
-                
-                doc.setFontSize(9);
-                doc.setTextColor(100, 100, 100);
-                doc.text(`Dicetak pada: ${timestamp}`, 15, 50);
-
-                const columns = type === 'masuk' 
-                    ? [["No Surat", "Tgl Surat", "Tgl Terima", "Pengirim", "Perihal", "Waktu Input"]]
-                    : [["No Surat", "Tgl Surat", "Tgl Kirim", "Tujuan / Perihal", "Waktu Input"]];
-
-                const rows = tableData.map(item => {
-                    if(type === 'masuk') {
-                        return [item.nosurat, item.tglsurat, item.tglterima, item.pengirim, item.perihal, item.timestamp];
-                    } else {
-                        return [item.nosurat, item.tglsurat, item.tglkirim, item.perihal, item.timestamp];
-                    }
-                });
-
-                doc.autoTable({
-                    head: columns,
-                    body: rows,
-                    startY: 55,
-                    theme: 'striped',
-                    headStyles: { 
-                        fillColor: type === 'masuk' ? [37, 99, 235] : [22, 163, 74], 
-                        fontSize: 10,
-                        halign: 'center',
-                        textColor: [255, 255, 255]
-                    },
-                    styles: { fontSize: 9, cellPadding: 3 },
-                    margin: { top: 40, left: 15, right: 15 }
-                });
-
-                doc.save(`${title.replace(/ /g, '_')}_${new Date().getTime()}.pdf`);
-                showToast("PDF Berhasil diunduh!");
+                const rgb = hexToRgb(currentThemeColor);
+                doc.setTextColor(rgb.r, rgb.g, rgb.b);
+                doc.setFontSize(18); doc.text("SDN 22 TANAH KERAS", 15, 15);
+                doc.addImage(img, 'PNG', doc.internal.pageSize.getWidth() - 35, 10, 20, 20);
+                doc.setDrawColor(rgb.r, rgb.g, rgb.b); doc.line(15, 32, doc.internal.pageSize.getWidth() - 15, 32);
+                doc.setTextColor(0,0,0); doc.text(title, doc.internal.pageSize.getWidth() / 2, 42, { align: 'center' });
+                const columns = type === 'masuk' ? [["No Surat", "Tgl Surat", "Pengirim", "Perihal", "Waktu"]] : [["No Surat", "Tgl Surat", "Tujuan / Perihal", "Waktu"]];
+                const rows = tableData.map(i => type === 'masuk' ? [i.nosurat, i.tglsurat, i.pengirim, i.perihal, i.timestamp] : [i.nosurat, i.tglsurat, i.perihal, i.timestamp]);
+                doc.autoTable({ head: columns, body: rows, startY: 55, headStyles: { fillColor: [rgb.r, rgb.g, rgb.b] } });
+                doc.save(`${title}.pdf`);
             };
+        }
 
-            img.onerror = function() {
-                doc.save(`${title.replace(/ /g, '_')}_error_logo.pdf`);
-                showToast("PDF diunduh tanpa logo");
-            };
+        function hexToRgb(hex) {
+            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : { r: 30, g: 64, b: 175 };
         }
 
         function updateDisplay() {
-            if(document.getElementById('stat-masuk')) document.getElementById('stat-masuk').innerText = state.masuk.length;
-            if(document.getElementById('stat-keluar')) document.getElementById('stat-keluar').innerText = state.keluar.length;
-            if(document.getElementById('stat-arsip')) document.getElementById('stat-arsip').innerText = state.arsip.length;
-            
+            document.getElementById('stat-masuk').innerText = state.masuk.length;
+            document.getElementById('stat-keluar').innerText = state.keluar.length;
+            document.getElementById('stat-arsip').innerText = state.arsip.length;
             renderTable('body-masuk', state.masuk, ['nosurat', 'tglsurat', 'pengirim', 'timestamp']);
             renderTable('body-keluar', state.keluar, ['nosurat', 'tglkirim', 'perihal', 'timestamp']);
             renderTable('body-users', state.users, ['username', 'peran']);
-            
             const bArsip = document.getElementById('body-arsip');
-            if(bArsip) {
-                bArsip.innerHTML = state.arsip.map((item) => `
-                    <tr>
-                        <td class="p-3 border-b">${item.no || '-'}</td>
-                        <td class="p-3 border-b uppercase font-bold text-gray-700">${item.namadokumen || '-'}</td>
-                        <td class="p-3 border-b"><a href="${item.file_link}" target="_blank" class="bg-purple-100 text-purple-700 px-2 py-1 rounded font-bold text-[10px] hover:bg-purple-200">BUKA DI DRIVE 🔗</a></td>
-                        <td class="p-3 border-b text-[10px] text-gray-400">${item.timestamp || '-'}</td>
-                    </tr>
-                `).join('');
-            }
+            if(bArsip) bArsip.innerHTML = state.arsip.map(i => `<tr><td class="p-3 border-b">${i.no || '-'}</td><td class="p-3 border-b uppercase font-bold">${i.namadokumen || '-'}</td><td class="p-3 border-b"><a href="${i.file_link}" target="_blank" class="text-blue-600 underline">Drive 🔗</a></td><td class="p-3 border-b text-[10px]">${i.timestamp || '-'}</td></tr>`).join('');
         }
 
         function renderTable(id, data, keys) {
-            const b = document.getElementById(id);
-            if(!b) return;
-            if(!data || data.length === 0) {
-                b.innerHTML = `<tr><td colspan="${keys.length}" class="p-4 text-center text-gray-400 italic">Data Kosong</td></tr>`;
-                return;
-            }
-            b.innerHTML = data.map(item => `<tr>${keys.map(k => `<td class="p-3 border-b">${item[k] || '-'}</td>`).join('')}</tr>`).join('');
+            const b = document.getElementById(id); if(!b) return;
+            b.innerHTML = data.length === 0 ? `<tr><td colspan="${keys.length}" class="p-4 text-center">Data Kosong</td></tr>` : data.map(item => `<tr>${keys.map(k => `<td class="p-3 border-b">${item[k] || '-'}</td>`).join('')}</tr>`).join('');
         }
 
         function switchTab(id) {
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
             document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-            const target = document.getElementById('section-' + id);
-            if(target) target.classList.remove('hidden');
+            document.getElementById('section-' + id).classList.remove('hidden');
             const btn = document.getElementById('btn-' + id);
             if(btn) btn.classList.add('active');
             document.getElementById('page-title').innerText = id.replace('-', ' ').toUpperCase();
@@ -455,11 +442,7 @@
 
         function handleLogout() { location.reload(); }
         function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-        function showToast(m) {
-            const t = document.getElementById('toast');
-            t.innerText = m; t.classList.remove('opacity-0');
-            setTimeout(() => t.classList.add('opacity-0'), 3000);
-        }
+        function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 3000); }
     </script>
 </body>
 </html>

@@ -5,468 +5,461 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Arsip SDN 22 Tanah Keras</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .sidebar-link.active { background-color: #1e40af; border-left: 4px solid #fbbf24; }
-        .hidden-section { display: none; }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #bfdbfe; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .sidebar-item.active { background-color: #1e40af; border-left: 4px solid #fbbf24; }
+        .admin-only { display: none; }
+        body.is-admin .admin-only { display: flex; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 300; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-    <!-- Halaman Login -->
-    <div id="login-page" class="fixed inset-0 z-[100] bg-blue-900 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-fade-in">
-            <div class="p-8 text-center bg-blue-50">
-                <div class="w-24 h-24 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-md p-2">
-                    <img src="https://iili.io/3b1SedN.png" alt="Logo SDN 22 Tanah Keras" class="w-full h-full object-contain">
-                </div>
-                <h1 class="text-2xl font-black text-blue-900 uppercase">Login Portal</h1>
-                <p class="text-sm text-blue-700 font-medium">SDN 22 Tanah Keras</p>
+    <div id="loading" class="loading-overlay">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-2"></div>
+        <p class="text-xs font-bold text-blue-600">Sinkronisasi Data...</p>
+    </div>
+
+    <!-- Screen Login -->
+    <div id="login-screen" class="fixed inset-0 z-[100] bg-blue-900 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 space-y-4">
+            <div class="text-center">
+                <img src="https://iili.io/3b1SedN.png" alt="Logo" class="h-16 mx-auto mb-3 object-contain">
+                <h1 class="text-xl font-bold text-blue-900 leading-tight">SDN 22</h1>
+                <p class="text-[10px] text-gray-500 font-medium tracking-widest uppercase">Tanah Keras - Arsip Digital</p>
             </div>
-            <form id="login-form" class="p-8 space-y-6">
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Username</label>
-                    <div class="relative">
-                        <i data-lucide="user" class="w-5 h-5 absolute left-3 top-3 text-gray-300"></i>
-                        <input type="text" id="username" required placeholder="Masukkan username" 
-                            class="w-full pl-10 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-blue-500 outline-none transition-all">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Kata Sandi</label>
-                    <div class="relative">
-                        <i data-lucide="key-round" class="w-5 h-5 absolute left-3 top-3 text-gray-300"></i>
-                        <input type="password" id="password" required placeholder="Masukkan sandi" 
-                            class="w-full pl-10 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-blue-500 outline-none transition-all">
-                    </div>
-                </div>
-                <div id="login-error" class="hidden text-red-500 text-xs font-bold bg-red-50 p-3 rounded-lg text-center border border-red-100">
-                    Username atau Sandi Salah!
-                </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 uppercase tracking-wider">
-                    Masuk ke Sistem
-                </button>
+            <form onsubmit="handleLogin(event)" class="space-y-3">
+                <input type="text" id="login-user" required placeholder="Username" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="password" id="login-pass" required placeholder="Sandi" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <div id="login-error" class="text-red-500 text-[10px] hidden italic text-center">Username atau Sandi salah!</div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg shadow-lg transition-all">Masuk</button>
             </form>
         </div>
     </div>
 
-    <!-- Aplikasi Dashboard Utama -->
-    <div id="main-app" class="hidden-section">
-        <div class="flex h-screen overflow-hidden">
-            <!-- Sidebar -->
-            <aside class="w-64 bg-blue-900 text-white flex flex-col transition-all duration-300">
-                <div class="p-6 text-center border-b border-blue-800">
-                    <div class="w-16 h-16 bg-white rounded-xl mx-auto mb-3 flex items-center justify-center shadow-lg p-1">
-                        <img src="https://iili.io/3b1SedN.png" alt="Logo SD" class="w-full h-full object-contain">
+    <div id="app" class="flex min-h-screen hidden">
+        <aside class="w-56 bg-blue-900 text-white flex-shrink-0 flex flex-col shadow-xl">
+            <div class="p-5 border-b border-blue-800 text-center">
+                <img src="https://iili.io/3b1SedN.png" alt="Logo" class="h-10 mx-auto mb-2">
+                <h1 class="text-lg font-bold text-yellow-400">SDN 22</h1>
+            </div>
+            <nav class="flex-1 mt-3 overflow-y-auto" id="main-nav">
+                <button onclick="switchTab('beranda')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm active" id="btn-beranda">🏠 Beranda</button>
+                <button onclick="switchTab('surat-masuk')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-surat-masuk">📥 Surat Masuk</button>
+                <button onclick="switchTab('surat-keluar')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-surat-keluar">📤 Surat Keluar</button>
+                <button onclick="switchTab('arsip')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-arsip">📂 Arsip Dokumen</button>
+                <button onclick="switchTab('manajemen-user')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-manajemen-user">👥 User</button>
+                <button onclick="switchTab('laporan-masuk')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-masuk">📊 Lap. Masuk</button>
+                <button onclick="switchTab('laporan-keluar')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-keluar">📈 Lap. Keluar</button>
+                <button onclick="switchTab('laporan-arsip')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-arsip">🗂️ Lap. Arsip</button>
+            </nav>
+            <button onclick="syncDataFromCloud()" class="bg-blue-800 p-2 text-[10px] font-bold text-blue-200 hover:bg-blue-700 transition-all">🔄 SINKRON SEKARANG</button>
+        </aside>
+
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
+                <h2 id="page-title" class="text-xl font-bold text-gray-700">Beranda</h2>
+                <div class="flex items-center gap-6">
+                    <div class="hidden md:flex flex-col items-end text-right">
+                        <p id="live-date" class="text-[10px] font-bold text-blue-800 uppercase tracking-wider"></p>
+                        <p id="live-clock" class="text-sm font-bold text-gray-600 font-mono"></p>
                     </div>
-                    <h1 class="text-sm font-bold uppercase tracking-wider">SDN 22 Tanah Keras</h1>
-                    <p class="text-xs text-blue-300 mt-1 italic">E-Arsip Digital</p>
+                    <button onclick="handleLogout()" class="text-xs text-red-600 font-bold bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-100 transition-all">Keluar 🚪</button>
                 </div>
+            </header>
 
-                <nav class="flex-1 mt-6 px-4 space-y-2">
-                    <button onclick="showSection('beranda')" id="btn-beranda" class="sidebar-link w-full flex items-center p-3 rounded-lg transition-colors hover:bg-blue-800 active">
-                        <i data-lucide="home" class="w-5 h-5 mr-3"></i>
-                        <span>Beranda</span>
-                    </button>
-                    <button onclick="showSection('form-arsip')" id="btn-form-arsip" class="sidebar-link w-full flex items-center p-3 rounded-lg transition-colors hover:bg-blue-800">
-                        <i data-lucide="file-plus" class="w-5 h-5 mr-3"></i>
-                        <span>Form Arsip</span>
-                    </button>
-                    <button onclick="showSection('laporan')" id="btn-laporan" class="sidebar-link w-full flex items-center p-3 rounded-lg transition-colors hover:bg-blue-800">
-                        <i data-lucide="database" class="w-5 h-5 mr-3"></i>
-                        <span>Laporan Arsip</span>
-                    </button>
-                </nav>
+            <div class="p-6 overflow-y-auto flex-1" id="main-content">
+                <!-- Section Beranda -->
+                <section id="section-beranda" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-xl border-l-4 border-blue-600 shadow-sm">
+                            <h3 class="text-gray-500 text-[10px] font-bold uppercase">Surat Masuk</h3>
+                            <p id="stat-masuk" class="text-2xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border-l-4 border-green-600 shadow-sm">
+                            <h3 class="text-gray-500 text-[10px] font-bold uppercase">Surat Keluar</h3>
+                            <p id="stat-keluar" class="text-2xl font-bold text-green-600">0</p>
+                        </div>
+                        <div class="admin-only bg-white p-5 rounded-xl border-l-4 border-purple-600 shadow-sm">
+                            <h3 class="text-gray-500 text-[10px] font-bold uppercase">Total Arsip</h3>
+                            <p id="stat-arsip" class="text-2xl font-bold text-purple-600">0</p>
+                        </div>
+                    </div>
+                </section>
 
-                <div class="p-4 border-t border-blue-800 flex justify-between items-center">
-                    <span class="text-[10px] text-blue-400 uppercase">Status Sync:</span>
-                    <div id="sync-status" class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                </div>
-            </aside>
+                <!-- Section Input Masuk -->
+                <section id="section-surat-masuk" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold mb-4">Input Surat Masuk</h3>
+                    <form onsubmit="saveToCloud(event, 'masuk')" class="space-y-3">
+                        <input name="nosurat" placeholder="No. Surat" required class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="date" name="tglsurat" required class="px-3 py-2 border rounded-lg text-sm">
+                            <input type="date" name="tglterima" required class="px-3 py-2 border rounded-lg text-sm">
+                        </div>
+                        <input name="pengirim" placeholder="Pengirim" required class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <textarea name="perihal" placeholder="Perihal" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg">Simpan ke Cloud</button>
+                    </form>
+                </section>
 
-            <!-- Konten Utama -->
-            <main class="flex-1 overflow-y-auto bg-gray-50">
-                <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
-                    <h2 id="page-title" class="text-xl font-bold text-gray-800">Beranda</h2>
-                    <div class="flex items-center space-x-4 relative">
-                        <button onclick="fetchDataFromSheet()" title="Sinkronisasi Data" class="p-2 text-gray-400 hover:text-blue-600 transition-colors">
-                            <i data-lucide="refresh-cw" id="sync-icon" class="w-5 h-5"></i>
+                <!-- Section Input Keluar -->
+                <section id="section-surat-keluar" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold mb-4">Input Surat Keluar</h3>
+                    <form onsubmit="saveToCloud(event, 'keluar')" class="space-y-3">
+                        <input name="nosurat" placeholder="No. Surat" required class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="date" name="tglsurat" required class="px-3 py-2 border rounded-lg text-sm">
+                            <input type="date" name="tglkirim" required class="px-3 py-2 border rounded-lg text-sm">
+                        </div>
+                        <textarea name="perihal" placeholder="Perihal / Tujuan" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-2 rounded-lg">Simpan ke Cloud</button>
+                    </form>
+                </section>
+
+                <!-- Section Arsip -->
+                <section id="section-arsip" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold mb-4">Upload ke Google Drive ARSIP</h3>
+                    <form onsubmit="handleFileUpload(event)" class="space-y-4">
+                        <input name="namaDokumen" id="arsip-nama" placeholder="Nama Dokumen" required class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <div class="border-2 border-dashed p-10 text-center rounded-xl bg-gray-50 hover:bg-purple-50 transition-colors">
+                            <input type="file" id="file-input" required class="text-xs">
+                            <p class="text-[10px] text-gray-400 mt-2">File akan tersimpan di folder ARSIP Google Drive</p>
+                        </div>
+                        <button type="submit" class="w-full bg-purple-600 text-white font-bold py-2 rounded-lg shadow-lg">Upload & Simpan Link</button>
+                    </form>
+                </section>
+
+                <!-- Tables -->
+                <section id="section-laporan-masuk" class="hidden bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                        <h3 class="font-bold text-sm">Laporan Surat Masuk</h3>
+                        <button onclick="downloadPDF('masuk')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-2">
+                            📄 DOWNLOAD PDF (LEGAL)
                         </button>
-                        <span id="current-date" class="hidden md:inline-block text-sm text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full"></span>
-                        
-                        <div class="relative group">
-                            <button id="user-menu-btn" onclick="toggleUserMenu()" class="w-10 h-10 bg-white border-2 border-blue-600 rounded-full flex items-center justify-center shadow-md overflow-hidden hover:scale-105 transition-all active:scale-95">
-                                <img src="https://iili.io/3b1SedN.png" alt="User" class="w-8 h-8 object-contain">
-                            </button>
-                            <div id="user-dropdown" class="hidden absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 animate-fade-in">
-                                <div class="px-4 py-3 border-b border-gray-50 flex items-center space-x-3">
-                                    <img src="https://iili.io/3b1SedN.png" alt="Logo Kecil" class="w-6 h-6 object-contain">
-                                    <div>
-                                        <p class="text-[10px] font-bold text-gray-400 uppercase">Administrator</p>
-                                        <p class="text-xs font-bold text-blue-900">SDN 22 TK</p>
-                                    </div>
-                                </div>
-                                <button onclick="logout()" class="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold">
-                                    <i data-lucide="log-out" class="w-4 h-4 mr-3"></i>
-                                    Keluar (Logout)
-                                </button>
-                            </div>
-                        </div>
                     </div>
-                </header>
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-blue-600 text-white"><tr><th class="p-3">No Surat</th><th class="p-3">Tgl Surat</th><th class="p-3">Pengirim</th><th class="p-3">Timestamp</th></tr></thead>
+                        <tbody id="body-masuk" class="divide-y"></tbody>
+                    </table>
+                </section>
 
-                <div class="p-8 max-w-6xl mx-auto">
-                    <!-- Section: Beranda -->
-                    <section id="section-beranda">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
-                                <div class="p-4 bg-blue-50 text-blue-600 rounded-xl">
-                                    <i data-lucide="files" class="w-8 h-8"></i>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-bold text-gray-400 uppercase">Total Arsip Tersinkron</p>
-                                    <h3 id="stat-total" class="text-3xl font-black text-blue-900">0</h3>
-                                </div>
-                            </div>
-                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
-                                <div class="p-4 bg-green-50 text-green-600 rounded-xl">
-                                    <i data-lucide="cloud-check" class="w-8 h-8"></i>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-bold text-gray-400 uppercase">Status Cloud Storage</p>
-                                    <h3 class="text-3xl font-black text-green-700">Terhubung</h3>
-                                </div>
-                            </div>
-                        </div>
+                <section id="section-laporan-keluar" class="hidden bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                        <h3 class="font-bold text-sm">Laporan Surat Keluar</h3>
+                        <button onclick="downloadPDF('keluar')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-2">
+                            📄 DOWNLOAD PDF (LEGAL)
+                        </button>
+                    </div>
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-green-600 text-white"><tr><th class="p-3">No Surat</th><th class="p-3">Tgl Kirim</th><th class="p-3">Perihal</th><th class="p-3">Timestamp</th></tr></thead>
+                        <tbody id="body-keluar" class="divide-y"></tbody>
+                    </table>
+                </section>
 
-                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="p-6 border-b bg-gradient-to-r from-blue-50 to-transparent flex items-center space-x-4">
-                                <img src="https://iili.io/3b1SedN.png" alt="SD Logo" class="w-10 h-10 object-contain">
-                                <h3 class="font-bold text-lg text-blue-900">Selamat Datang di Portal Arsip Digital Terpadu</h3>
-                            </div>
-                            <div class="p-6">
-                                <p class="text-gray-600 leading-relaxed text-lg">
-                                    Aplikasi ini sekarang terhubung langsung dengan <b>Google Sheets</b> dan <b>Google Drive</b> melalui URL yang Anda berikan. 
-                                    Semua data yang diunggah akan tersimpan otomatis di Folder 'ARSIP' di Drive Anda dan tercatat di Sheet laporan secara real-time.
-                                </p>
-                            </div>
-                        </div>
-                    </section>
+                <section id="section-laporan-arsip" class="hidden bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-sm">Laporan Arsip Digital</h3>
+                    </div>
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-purple-600 text-white"><tr><th class="p-3">NO</th><th class="p-3">NAMA DOKUMEN</th><th class="p-3">FILE (LINK DRIVE)</th><th class="p-3">WAKTU</th></tr></thead>
+                        <tbody id="body-arsip" class="divide-y"></tbody>
+                    </table>
+                </section>
 
-                    <!-- Section: Form Arsip -->
-                    <section id="section-form-arsip" class="hidden-section">
-                        <div class="max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mx-auto">
-                            <div class="p-6 bg-blue-900 text-white flex items-center space-x-3">
-                                <i data-lucide="file-up" class="w-6 h-6"></i>
-                                <h3 class="font-bold text-lg">Input Arsip ke Cloud</h3>
-                            </div>
-                            <form id="upload-form" class="p-8 space-y-6">
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Nama Dokumen</label>
-                                    <input type="text" id="docName" required placeholder="Contoh: Laporan Dana BOS 2024" 
-                                        class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-blue-500 outline-none font-medium">
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Unggah Berkas (PDF/Gambar/Doc)</label>
-                                    <div id="dropzone" class="relative border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center hover:border-blue-500 hover:bg-blue-50 cursor-pointer bg-gray-50 transition-all">
-                                        <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                        <div id="file-placeholder">
-                                            <i data-lucide="upload-cloud" class="w-8 h-8 text-blue-600 mx-auto mb-2"></i>
-                                            <p class="text-sm font-bold text-gray-600">Klik untuk pilih file</p>
-                                        </div>
-                                        <div id="file-info" class="hidden">
-                                            <p id="selected-filename" class="font-bold text-gray-800 truncate px-4"></p>
-                                            <p id="selected-filesize" class="text-xs font-medium text-gray-500"></p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button type="submit" id="btn-submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-all flex justify-center items-center disabled:bg-gray-400">
-                                    <span id="btn-text" class="flex items-center">
-                                        <i data-lucide="cloud-upload" class="w-6 h-6 mr-3"></i> SIMPAN KE GOOGLE CLOUD
-                                    </span>
-                                    <span id="btn-loader" class="hidden"><div class="loader mr-2"></div> Memproses...</span>
-                                </button>
-                            </form>
-                        </div>
-                    </section>
-
-                    <!-- Section: Laporan -->
-                    <section id="section-laporan" class="hidden-section">
-                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="p-6 border-b flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50">
-                                <h3 class="font-black text-xl text-gray-800 uppercase tracking-tighter">Daftar Laporan (Live Sync)</h3>
-                                <div class="relative w-full md:w-auto">
-                                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari dokumen..." class="w-full md:w-64 pl-10 pr-4 py-2.5 border-2 border-gray-100 rounded-xl text-sm outline-none focus:border-blue-500">
-                                    <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-3"></i>
-                                </div>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase w-16">No</th>
-                                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase">Nama Dokumen</th>
-                                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase">Tgl Upload</th>
-                                            <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase text-center w-32">Link File</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="table-body" class="divide-y divide-gray-100">
-                                        <tr><td colspan="4" class="p-10 text-center"><div class="loader"></div> Menghubungkan ke server...</td></tr>
-                                    </tbody>
-                                </table>
-                                <div id="empty-state" class="hidden p-20 text-center">
-                                    <i data-lucide="folder-search" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
-                                    <p class="text-gray-300 font-bold uppercase tracking-widest">Belum Ada Data di Sheet</p>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-            </main>
-        </div>
+                <!-- Section User -->
+                <section id="section-manajemen-user" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold mb-4">Tambah Akun Baru</h3>
+                    <form onsubmit="saveToCloud(event, 'users')" class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-6">
+                        <input name="username" placeholder="Username" required class="px-3 py-2 border rounded-lg text-sm">
+                        <input name="sandi" placeholder="Sandi" required class="px-3 py-2 border rounded-lg text-sm">
+                        <select name="peran" class="px-3 py-2 border rounded-lg text-sm">
+                            <option value="Admin">Admin</option>
+                            <option value="User">User</option>
+                        </select>
+                        <button type="submit" class="md:col-span-3 bg-yellow-500 text-white font-bold py-2 rounded-lg text-sm">Simpan User</button>
+                    </form>
+                    <table class="w-full text-xs text-left border rounded-lg">
+                        <thead class="bg-gray-100"><tr><th class="p-2">User</th><th class="p-2">Role</th></tr></thead>
+                        <tbody id="body-users" class="divide-y"></tbody>
+                    </table>
+                </section>
+            </div>
+        </main>
     </div>
 
-    <div id="toast" class="fixed bottom-8 right-8 bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl transition-all duration-500 transform translate-y-32 opacity-0 flex items-center z-[200]">
-        <div id="toast-icon-container" class="bg-green-500 p-1.5 rounded-full mr-3">
-            <i id="toast-icon" data-lucide="check" class="w-4 h-4 text-white"></i>
-        </div>
-        <span id="toast-msg" class="font-bold text-sm"></span>
-    </div>
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-900 text-white text-xs px-4 py-2 rounded-full shadow-2xl opacity-0 transition-opacity z-[200]">Pesan</div>
 
     <script>
-        // --- KONFIGURASI GOOGLE APPS SCRIPT TERHUBUNG ---
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPLTaTRUlSl1yfSL1CHMdQgvYh-51RSF3UB_1zFt7thf3yDXJJzJM4ELHchCsFpp_x/exec"; 
+        // URL Apps Script Anda yang telah diperbarui
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxTReuThxxNlJkQ63jfGC-M_9YeLNcmsbHkoEzZXFTNIs5sc44oiYVUEto642_5r6vk/exec"; 
+        const LOGO_URL = "https://iili.io/3b1SedN.png";
 
-        let archiveData = [];
+        let currentUser = null;
+        let state = { masuk: [], keluar: [], arsip: [], users: [] };
 
-        // SISTEM LOGIN
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
-
-            // Kredensial Akses
-            if (user === "SDN22TK" && pass === "12345") {
-                document.getElementById('login-page').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden-section');
-                showToast("Berhasil Masuk & Sinkronisasi");
-                initIcons();
-                fetchDataFromSheet();
-            } else {
-                const err = document.getElementById('login-error');
-                err.classList.remove('hidden');
-                setTimeout(() => err.classList.add('hidden'), 3000);
-            }
-        });
-
-        function logout() {
-            if (confirm("Apakah Anda ingin keluar dari sistem?")) {
-                location.reload();
-            }
-        }
-
-        function toggleUserMenu() {
-            document.getElementById('user-dropdown').classList.toggle('hidden');
-        }
-
-        // AMBIL DATA DARI GOOGLE SHEET (SYNC)
-        async function fetchDataFromSheet() {
-            if (!SCRIPT_URL) return;
-
-            const syncIcon = document.getElementById('sync-icon');
-            syncIcon.classList.add('animate-spin');
+        // Real-time Clock Function
+        function updateClock() {
+            const now = new Date();
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
             
-            try {
-                // Menambahkan timestamp untuk menghindari cache browser
-                const response = await fetch(SCRIPT_URL + "?action=read&t=" + new Date().getTime());
-                const data = await response.json();
-                
-                // Cek jika data valid (Array)
-                if (Array.isArray(data)) {
-                    archiveData = data;
-                    renderTable(data);
-                    updateStats();
-                    document.getElementById('sync-status').classList.replace('bg-red-500', 'bg-green-500');
-                } else {
-                    console.error("Data bukan array:", data);
-                    renderTable([]);
-                }
-            } catch (error) {
-                console.error("Gagal sinkronisasi:", error);
-                document.getElementById('sync-status').classList.replace('bg-green-500', 'bg-red-500');
-                showToast("Gagal Sinkronisasi!", "danger");
-            } finally {
-                syncIcon.classList.remove('animate-spin');
+            const dayName = days[now.getDay()];
+            const date = now.getDate();
+            const monthName = months[now.getMonth()];
+            const year = now.getFullYear();
+            
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            const dateStr = `${dayName}, ${date} ${monthName} ${year}`;
+            const timeStr = `${hours}:${minutes}:${seconds} WIB`;
+
+            const dateEl = document.getElementById('live-date');
+            const clockEl = document.getElementById('live-clock');
+            
+            if(dateEl) dateEl.innerText = dateStr;
+            if(clockEl) clockEl.innerText = timeStr;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const u = document.getElementById('login-user').value;
+            const p = document.getElementById('login-pass').value;
+            
+            showLoading(true);
+            await syncDataFromCloud(); 
+            showLoading(false);
+
+            const found = state.users.find(usr => usr.username === u && usr.sandi === p);
+            if (found || (u === 'SDN22TK' && p === '12345')) {
+                currentUser = found || { username: 'SDN22TK', peran: 'Admin' };
+                document.body.classList.toggle('is-admin', currentUser.peran === 'Admin');
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                switchTab('beranda');
+                showToast("Selamat Datang, " + currentUser.username);
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
             }
         }
 
-        // PROSES UNGGAH KE GOOGLE DRIVE & SHEET
-        const fileInput = document.getElementById('fileInput');
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                document.getElementById('selected-filename').innerText = file.name;
-                document.getElementById('selected-filesize').innerText = (file.size / (1024 * 1024)).toFixed(2) + " MB";
-                document.getElementById('file-placeholder').classList.add('hidden');
-                document.getElementById('file-info').classList.remove('hidden');
+        async function syncDataFromCloud() {
+            if (!WEB_APP_URL) return;
+            showLoading(true);
+            try {
+                const response = await fetch(WEB_APP_URL);
+                const cloudData = await response.json();
+                state = cloudData;
+                updateDisplay();
+            } catch (e) {
+                showToast("Gagal Sinkron: Cek URL Apps Script");
+                console.error(e);
             }
-        });
+            showLoading(false);
+        }
 
-        document.getElementById('upload-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const docName = document.getElementById('docName').value;
+        async function saveToCloud(event, type) {
+            event.preventDefault();
+            showLoading(true);
+            const formData = new FormData(event.target);
+            const data = {};
+            formData.forEach((v, k) => data[k] = v);
+            data.timestamp = new Date().toLocaleString();
+
+            try {
+                await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ action: 'saveData', type: type, data: data })
+                });
+                setTimeout(async () => {
+                    await syncDataFromCloud();
+                    event.target.reset();
+                    showToast("Data Tersimpan ke Google Sheet!");
+                }, 1000);
+            } catch (e) {
+                showToast("Terjadi kesalahan koneksi");
+            }
+            showLoading(false);
+        }
+
+        async function handleFileUpload(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('file-input');
             const file = fileInput.files[0];
+            const nama = document.getElementById('arsip-nama').value;
+            
             if (!file) return;
 
-            // UI State Loading
-            const btn = document.getElementById('btn-submit');
-            const btnText = document.getElementById('btn-text');
-            const btnLoader = document.getElementById('btn-loader');
-            
-            btn.disabled = true;
-            btnText.classList.add('hidden');
-            btnLoader.classList.remove('hidden');
-
+            showLoading(true);
             const reader = new FileReader();
-            reader.onload = async function() {
-                const base64Data = reader.result.split(',')[1];
-                const payload = {
-                    action: "upload",
-                    docName: docName,
-                    fileName: file.name,
-                    mimeType: file.type,
-                    data: base64Data
-                };
-
-                try {
-                    const response = await fetch(SCRIPT_URL, {
-                        method: "POST",
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-
-                    if (result.status === "success") {
-                        showToast("Arsip Berhasil Disimpan!");
-                        e.target.reset();
-                        resetFileInput();
-                        await fetchDataFromSheet(); // Tarik ulang data terbaru
-                        showSection('laporan');
-                    } else {
-                        throw new Error(result.message);
-                    }
-                } catch (error) {
-                    showToast("Gagal mengunggah arsip!", "danger");
-                    console.error(error);
-                } finally {
-                    btn.disabled = false;
-                    btnText.classList.remove('hidden');
-                    btnLoader.classList.add('hidden');
-                }
-            };
             reader.readAsDataURL(file);
-        });
+            reader.onload = async () => {
+                const base64 = reader.result.split(',')[1];
+                try {
+                    await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify({
+                            action: 'saveFile',
+                            data: {
+                                fileName: file.name,
+                                mimeType: file.type,
+                                base64: base64,
+                                namaDokumen: nama
+                            }
+                        })
+                    });
+                    
+                    setTimeout(async () => {
+                        showToast("File Berhasil diupload ke Drive!");
+                        await syncDataFromCloud();
+                        event.target.reset();
+                        document.getElementById('arsip-nama').value = "";
+                    }, 2000);
+                } catch (e) {
+                    showToast("Gagal upload file");
+                }
+                showLoading(false);
+            };
+        }
 
-        function renderTable(data) {
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = "";
+        function downloadPDF(type) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'legal'
+            });
+
+            const title = type === 'masuk' ? 'LAPORAN SURAT MASUK' : 'LAPORAN SURAT KELUAR';
+            const tableData = state[type];
+            const timestamp = new Date().toLocaleString('id-ID');
+            const pageWidth = doc.internal.pageSize.getWidth();
+
+            const img = new Image();
+            img.src = LOGO_URL;
+            img.crossOrigin = "Anonymous";
+
+            img.onload = function() {
+                doc.setFontSize(18);
+                doc.setTextColor(30, 64, 175);
+                doc.text("SDN 22 TANAH KERAS", 15, 15);
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text("Sistem Informasi Arsip Digital Sekolah", 15, 20);
+
+                doc.addImage(img, 'PNG', pageWidth - 35, 10, 20, 20);
+
+                doc.setDrawColor(30, 64, 175);
+                doc.setLineWidth(0.5);
+                doc.line(15, 32, pageWidth - 15, 32);
+
+                doc.setFontSize(14);
+                doc.setTextColor(0, 0, 0);
+                doc.text(title, pageWidth / 2, 42, { align: 'center' });
+                
+                doc.setFontSize(9);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Dicetak pada: ${timestamp}`, 15, 50);
+
+                const columns = type === 'masuk' 
+                    ? [["No Surat", "Tgl Surat", "Tgl Terima", "Pengirim", "Perihal", "Waktu Input"]]
+                    : [["No Surat", "Tgl Surat", "Tgl Kirim", "Perihal", "Waktu Input"]];
+
+                const rows = tableData.map(item => {
+                    if(type === 'masuk') {
+                        return [item.nosurat, item.tglsurat, item.tglterima, item.pengirim, item.perihal, item.timestamp];
+                    } else {
+                        return [item.nosurat, item.tglsurat, item.tglkirim, item.perihal, item.timestamp];
+                    }
+                });
+
+                doc.autoTable({
+                    head: columns,
+                    body: rows,
+                    startY: 55,
+                    theme: 'striped',
+                    headStyles: { 
+                        fillColor: type === 'masuk' ? [37, 99, 235] : [22, 163, 74], 
+                        fontSize: 10,
+                        halign: 'center',
+                        textColor: [255, 255, 255]
+                    },
+                    styles: { fontSize: 9, cellPadding: 3 },
+                    margin: { top: 40, left: 15, right: 15 }
+                });
+
+                doc.save(`${title.replace(/ /g, '_')}_${new Date().getTime()}.pdf`);
+                showToast("PDF Berhasil diunduh!");
+            };
+
+            img.onerror = function() {
+                doc.save(`${title.replace(/ /g, '_')}_error_logo.pdf`);
+                showToast("PDF diunduh tanpa logo");
+            };
+        }
+
+        function updateDisplay() {
+            if(document.getElementById('stat-masuk')) document.getElementById('stat-masuk').innerText = state.masuk.length;
+            if(document.getElementById('stat-keluar')) document.getElementById('stat-keluar').innerText = state.keluar.length;
+            if(document.getElementById('stat-arsip')) document.getElementById('stat-arsip').innerText = state.arsip.length;
             
-            if (!data || data.length === 0) {
-                document.getElementById('empty-state').classList.remove('hidden');
+            renderTable('body-masuk', state.masuk, ['nosurat', 'tglsurat', 'pengirim', 'timestamp']);
+            renderTable('body-keluar', state.keluar, ['nosurat', 'tglkirim', 'perihal', 'timestamp']);
+            renderTable('body-users', state.users, ['username', 'peran']);
+            
+            const bArsip = document.getElementById('body-arsip');
+            if(bArsip) {
+                bArsip.innerHTML = state.arsip.map((item) => `
+                    <tr>
+                        <td class="p-3 border-b">${item.no || '-'}</td>
+                        <td class="p-3 border-b uppercase font-bold text-gray-700">${item.namadokumen || '-'}</td>
+                        <td class="p-3 border-b"><a href="${item.file_link}" target="_blank" class="bg-purple-100 text-purple-700 px-2 py-1 rounded font-bold text-[10px] hover:bg-purple-200">BUKA DI DRIVE 🔗</a></td>
+                        <td class="p-3 border-b text-[10px] text-gray-400">${item.timestamp || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function renderTable(id, data, keys) {
+            const b = document.getElementById(id);
+            if(!b) return;
+            if(!data || data.length === 0) {
+                b.innerHTML = `<tr><td colspan="${keys.length}" class="p-4 text-center text-gray-400 italic">Data Kosong</td></tr>`;
                 return;
             }
-            document.getElementById('empty-state').classList.add('hidden');
-
-            data.forEach((item, index) => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50/30 transition-colors";
-                tr.innerHTML = `
-                    <td class="px-6 py-4 text-xs font-bold text-gray-400">${index + 1}</td>
-                    <td class="px-6 py-4 font-bold text-gray-800 text-sm">${item.docName}</td>
-                    <td class="px-6 py-4 text-xs font-medium text-gray-500">${item.date}</td>
-                    <td class="px-6 py-4 text-center">
-                        <a href="${item.url}" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-200 transition-all border border-blue-200">
-                            <i data-lucide="external-link" class="w-3 h-3 mr-2"></i> LIHAT FILE
-                        </a>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            initIcons();
+            b.innerHTML = data.map(item => `<tr>${keys.map(k => `<td class="p-3 border-b">${item[k] || '-'}</td>`).join('')}</tr>`).join('');
         }
 
-        // NAVIGASI & UTILITAS
-        function showSection(id) {
-            document.querySelectorAll('section').forEach(s => s.classList.add('hidden-section'));
-            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-            document.getElementById(`section-${id}`).classList.remove('hidden-section');
-            document.getElementById(`btn-${id}`).classList.add('active');
-            document.getElementById('page-title').innerText = id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        function switchTab(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+            const target = document.getElementById('section-' + id);
+            if(target) target.classList.remove('hidden');
+            const btn = document.getElementById('btn-' + id);
+            if(btn) btn.classList.add('active');
+            document.getElementById('page-title').innerText = id.replace('-', ' ').toUpperCase();
         }
 
-        function resetFileInput() {
-            fileInput.value = "";
-            document.getElementById('file-info').classList.add('hidden');
-            document.getElementById('file-placeholder').classList.remove('hidden');
+        function handleLogout() { location.reload(); }
+        function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m; t.classList.remove('opacity-0');
+            setTimeout(() => t.classList.add('opacity-0'), 3000);
         }
-
-        function updateStats() {
-            document.getElementById('stat-total').innerText = archiveData.length;
-        }
-
-        function showToast(msg, type = "success") {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = msg;
-            document.getElementById('toast-icon-container').className = type === "danger" ? "bg-red-500 p-1.5 rounded-full mr-3" : "bg-green-500 p-1.5 rounded-full mr-3";
-            toast.classList.remove('translate-y-32', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
-            setTimeout(() => {
-                toast.classList.add('translate-y-32', 'opacity-0');
-                toast.classList.remove('translate-y-0', 'opacity-100');
-            }, 3000);
-        }
-
-        function filterTable() {
-            const input = document.getElementById("searchInput").value.toLowerCase();
-            const rows = document.querySelectorAll("#table-body tr");
-            rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(input) ? "" : "none";
-            });
-        }
-
-        function initIcons() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
-
-        window.onload = () => {
-            document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
-            initIcons();
-        };
     </script>
 </body>
 </html>

@@ -157,7 +157,7 @@
                         </button>
                     </div>
                     <table class="w-full text-xs text-left">
-                        <thead class="bg-green-600 text-white"><tr><th class="p-3">No Surat</th><th class="p-3">Tgl Kirim</th><th class="p-3">Perihal</th><th class="p-3">Timestamp</th></tr></thead>
+                        <thead class="bg-green-600 text-white"><tr><th class="p-3">No Surat</th><th class="p-3">Tgl Kirim</th><th class="p-3">Tujuan / Perihal</th><th class="p-3">Timestamp</th></tr></thead>
                         <tbody id="body-keluar" class="divide-y"></tbody>
                     </table>
                 </section>
@@ -376,7 +376,7 @@
 
                 const columns = type === 'masuk' 
                     ? [["No Surat", "Tgl Surat", "Tgl Terima", "Pengirim", "Perihal", "Waktu Input"]]
-                    : [["No Surat", "Tgl Surat", "Tgl Kirim", "Perihal", "Waktu Input"]];
+                    : [["No Surat", "Tgl Surat", "Tgl Kirim", "Tujuan / Perihal", "Waktu Input"]];
 
                 const rows = tableData.map(item => {
                     if(type === 'masuk') {

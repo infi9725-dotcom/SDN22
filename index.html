@@ -7,13 +7,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; transition: background-color 0.3s; }
         aside, .sidebar-item.active { transition: background-color 0.3s, border-color 0.3s; }
         .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
-        .admin-only { display: none; }
-        body.is-admin .admin-only { display: flex; }
+        
+        /* Pengaturan Hak Akses via CSS */
+        .admin-only { display: none !important; }
+        body.is-admin .admin-only { display: flex !important; }
+        
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 300; align-items: center; justify-content: center; flex-direction: column; }
@@ -24,9 +28,10 @@
         .card-stat-masuk { border-left: 4px solid #2563eb; }
         .card-stat-keluar { border-left: 4px solid #16a34a; }
         .card-stat-arsip { border-left: 4px solid #9333ea; }
+        .card-stat-user { border-left: 4px solid #eab308; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 theme-blue">
+<body class="bg-gray-50 text-gray-800">
 
     <div id="loading" class="loading-overlay">
         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-2"></div>
@@ -79,9 +84,13 @@
                 <button onclick="switchTab('beranda')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm active" id="btn-beranda">🏠 Beranda</button>
                 <button onclick="switchTab('surat-masuk')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-surat-masuk">📥 Surat Masuk</button>
                 <button onclick="switchTab('surat-keluar')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-surat-keluar">📤 Surat Keluar</button>
+                <!-- Menu Khusus Admin -->
                 <button onclick="switchTab('arsip')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-arsip">📂 Arsip Dokumen</button>
+                
                 <button onclick="switchTab('laporan-masuk')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-masuk">📊 Lap. Masuk</button>
                 <button onclick="switchTab('laporan-keluar')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-keluar">📈 Lap. Keluar</button>
+                
+                <!-- Menu Khusus Admin -->
                 <button onclick="switchTab('laporan-arsip')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-arsip">🗂️ Lap. Arsip</button>
                 <button onclick="switchTab('manajemen-user')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-manajemen-user">👥 User</button>
             </nav>
@@ -117,22 +126,49 @@
                 <!-- Beranda -->
                 <section id="section-beranda" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="bg-white p-5 rounded-xl card-stat card-stat-masuk shadow-sm">
+                        <div class="bg-white p-5 rounded-xl card-stat card-stat-masuk shadow-sm hover:shadow-md transition-shadow">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Surat Masuk</h3>
                             <p id="stat-masuk" class="text-2xl font-bold text-blue-600">0</p>
                         </div>
-                        <div class="bg-white p-5 rounded-xl card-stat card-stat-keluar shadow-sm">
+                        <div class="bg-white p-5 rounded-xl card-stat card-stat-keluar shadow-sm hover:shadow-md transition-shadow">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Surat Keluar</h3>
                             <p id="stat-keluar" class="text-2xl font-bold text-green-600">0</p>
                         </div>
-                        <div class="admin-only bg-white p-5 rounded-xl card-stat card-stat-arsip shadow-sm">
+                        <!-- Stat Khusus Admin -->
+                        <div class="admin-only bg-white p-5 rounded-xl card-stat card-stat-arsip shadow-sm hover:shadow-md transition-shadow">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Arsip Digital</h3>
                             <p id="stat-arsip" class="text-2xl font-bold text-purple-600">0</p>
+                        </div>
+                        <div class="admin-only bg-white p-5 rounded-xl card-stat card-stat-user shadow-sm hover:shadow-md transition-shadow">
+                            <h3 class="text-gray-500 text-[10px] font-bold uppercase">Total Pengguna</h3>
+                            <p id="stat-users" class="text-2xl font-bold text-yellow-600">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Chart Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-700 text-sm">Grafik Statistik Tahunan</h3>
+                                <span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded">Update Realtime</span>
+                            </div>
+                            <div class="h-[300px]">
+                                <canvas id="mainChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-700 text-sm">Persentase Jenis Dokumen</h3>
+                                <span class="text-[10px] font-bold bg-purple-50 text-purple-600 px-2 py-1 rounded">Total Data</span>
+                            </div>
+                            <div class="h-[300px] flex items-center justify-center">
+                                <canvas id="pieChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- Input Forms -->
+                <!-- Form Section (Bisa diakses User & Admin) -->
                 <section id="section-surat-masuk" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Tambah Surat Masuk</h3>
                     <form onsubmit="saveToCloud(event, 'masuk')" class="space-y-3">
@@ -160,7 +196,8 @@
                     </form>
                 </section>
 
-                <section id="section-arsip" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
+                <!-- Arsip Khusus Admin -->
+                <section id="section-arsip" class="hidden admin-only max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Upload Dokumen Digital (Google Drive)</h3>
                     <form onsubmit="handleFileUpload(event)" class="space-y-4">
                         <input name="namaDokumen" id="arsip-nama" placeholder="Nama Dokumen (Contoh: SK Mutasi)" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
@@ -171,29 +208,18 @@
                     </form>
                 </section>
 
-                <!-- Laporan Section (With Search & Filter) -->
+                <!-- Laporan Masuk (Bisa diakses User & Admin) -->
                 <section id="section-laporan-masuk" class="hidden bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
                     <div class="p-4 bg-gray-50 border-b space-y-4">
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <h3 class="font-bold text-sm">Laporan Surat Masuk</h3>
-                            <button onclick="downloadPDF('masuk')" class="bg-red-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold">📄 DOWNLOAD PDF (LEGAL)</button>
+                            <button onclick="downloadPDF('masuk')" class="bg-red-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold">📄 DOWNLOAD PDF</button>
                         </div>
-                        <!-- Fitur Filter & Cari -->
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                            <div class="flex flex-col">
-                                <label class="text-[9px] font-bold text-gray-400 uppercase">Dari Tanggal</label>
-                                <input type="date" id="filter-masuk-start" onchange="applyFilters('masuk')" class="px-2 py-1.5 border rounded-lg text-xs">
-                            </div>
-                            <div class="flex flex-col">
-                                <label class="text-[9px] font-bold text-gray-400 uppercase">Sampai Tanggal</label>
-                                <input type="date" id="filter-masuk-end" onchange="applyFilters('masuk')" class="px-2 py-1.5 border rounded-lg text-xs">
-                            </div>
-                            <div class="md:col-span-2 flex flex-col">
-                                <label class="text-[9px] font-bold text-gray-400 uppercase">Cari Sesuatu...</label>
-                                <div class="relative">
-                                    <input type="text" id="search-masuk" onkeyup="applyFilters('masuk')" placeholder="Cari No Surat, Pengirim, atau Perihal..." class="w-full px-3 py-1.5 border rounded-lg text-xs pl-8">
-                                    <span class="absolute left-2 top-1.5 opacity-30">🔍</span>
-                                </div>
+                            <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-400 uppercase">Dari Tanggal</label><input type="date" id="filter-masuk-start" onchange="applyFilters('masuk')" class="px-2 py-1.5 border rounded-lg text-xs"></div>
+                            <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-400 uppercase">Sampai Tanggal</label><input type="date" id="filter-masuk-end" onchange="applyFilters('masuk')" class="px-2 py-1.5 border rounded-lg text-xs"></div>
+                            <div class="md:col-span-2 flex flex-col"><label class="text-[9px] font-bold text-gray-400 uppercase">Cari Sesuatu...</label>
+                                <div class="relative"><input type="text" id="search-masuk" onkeyup="applyFilters('masuk')" placeholder="Cari..." class="w-full px-3 py-1.5 border rounded-lg text-xs pl-8"><span class="absolute left-2 top-1.5 opacity-30">🔍</span></div>
                             </div>
                         </div>
                     </div>
@@ -205,17 +231,18 @@
                     </div>
                 </section>
 
+                <!-- Laporan Keluar (Bisa diakses User & Admin) -->
                 <section id="section-laporan-keluar" class="hidden bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
                     <div class="p-4 bg-gray-50 border-b space-y-4">
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <h3 class="font-bold text-sm">Laporan Surat Keluar</h3>
-                            <button onclick="downloadPDF('keluar')" class="bg-red-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold">📄 DOWNLOAD PDF (LEGAL)</button>
+                            <button onclick="downloadPDF('keluar')" class="bg-red-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold">📄 DOWNLOAD PDF</button>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                             <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-400 uppercase">Dari Tanggal</label><input type="date" id="filter-keluar-start" onchange="applyFilters('keluar')" class="px-2 py-1.5 border rounded-lg text-xs"></div>
                             <div class="flex flex-col"><label class="text-[9px] font-bold text-gray-400 uppercase">Sampai Tanggal</label><input type="date" id="filter-keluar-end" onchange="applyFilters('keluar')" class="px-2 py-1.5 border rounded-lg text-xs"></div>
                             <div class="md:col-span-2 flex flex-col"><label class="text-[9px] font-bold text-gray-400 uppercase">Cari Sesuatu...</label>
-                                <div class="relative"><input type="text" id="search-keluar" onkeyup="applyFilters('keluar')" placeholder="Cari No Surat atau Perihal..." class="w-full px-3 py-1.5 border rounded-lg text-xs pl-8"><span class="absolute left-2 top-1.5 opacity-30">🔍</span></div>
+                                <div class="relative"><input type="text" id="search-keluar" onkeyup="applyFilters('keluar')" placeholder="Cari..." class="w-full px-3 py-1.5 border rounded-lg text-xs pl-8"><span class="absolute left-2 top-1.5 opacity-30">🔍</span></div>
                             </div>
                         </div>
                     </div>
@@ -227,12 +254,13 @@
                     </div>
                 </section>
 
-                <section id="section-laporan-arsip" class="hidden bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
+                <!-- Laporan Arsip Khusus Admin -->
+                <section id="section-laporan-arsip" class="hidden admin-only bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
                     <div class="p-4 bg-gray-50 border-b space-y-4">
                         <div class="flex items-center justify-between">
                             <h3 class="font-bold text-sm">Laporan Arsip Digital</h3>
                             <div class="w-64 relative">
-                                <input type="text" id="search-arsip" onkeyup="applyFilters('arsip')" placeholder="Cari Nama Dokumen..." class="w-full px-3 py-1.5 border rounded-lg text-xs pl-8">
+                                <input type="text" id="search-arsip" onkeyup="applyFilters('arsip')" placeholder="Cari..." class="w-full px-3 py-1.5 border rounded-lg text-xs pl-8">
                                 <span class="absolute left-2 top-1.5 opacity-30">🔍</span>
                             </div>
                         </div>
@@ -245,7 +273,8 @@
                     </div>
                 </section>
 
-                <section id="section-manajemen-user" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
+                <!-- Manajemen User Khusus Admin -->
+                <section id="section-manajemen-user" class="hidden admin-only max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Tambah Pengguna</h3>
                     <form onsubmit="saveToCloud(event, 'users')" class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-6">
                         <input name="username" placeholder="Username" required class="px-3 py-2 border rounded-lg text-sm">
@@ -269,6 +298,8 @@
         let state = { masuk: [], keluar: [], arsip: [], users: [] };
         let filteredState = { masuk: [], keluar: [], arsip: [] };
         let currentThemeColor = '#1e3a8a'; 
+        let mainChart = null;
+        let pieChart = null;
 
         function updateClock() {
             const now = new Date();
@@ -285,74 +316,144 @@
 
         async function handleLogin(event) {
             event.preventDefault();
-            const u = document.getElementById('login-user').value;
-            const p = document.getElementById('login-pass').value;
+            const u = document.getElementById('login-user').value.trim();
+            const p = document.getElementById('login-pass').value.trim();
+            const errorMsg = document.getElementById('login-error');
+            
+            errorMsg.classList.add('hidden');
             showLoading(true);
-            await syncDataFromCloud(); 
+
+            try {
+                await syncDataFromCloud(); 
+            } catch (err) {
+                console.error("Gagal sinkronisasi data cloud");
+            }
+
             showLoading(false);
 
-            const found = state.users.find(usr => usr.username === u && usr.sandi === p);
+            const found = state.users.find(usr => 
+                String(usr.username).toLowerCase() === u.toLowerCase() && 
+                String(usr.sandi) === p
+            );
+
             if (found || (u === 'SDN22TK' && p === '12345')) {
                 currentUser = found || { username: 'SDN22TK', peran: 'Admin' };
                 document.getElementById('display-username').innerText = currentUser.username;
                 document.getElementById('display-role').innerText = currentUser.peran;
+                
+                // AKTIVASI PERAN: Menambahkan class 'is-admin' jika peran adalah Admin
                 document.body.classList.toggle('is-admin', currentUser.peran === 'Admin');
+                
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
                 switchTab('beranda');
+                
+                if (!mainChart) initCharts(); else updateChartData();
+                showToast("Selamat Datang, " + currentUser.username);
             } else {
-                document.getElementById('login-error').classList.remove('hidden');
+                errorMsg.classList.remove('hidden');
             }
         }
 
         async function syncDataFromCloud() {
-            showLoading(true);
+            const timestamp = new Date().getTime();
+            const urlWithCacheBuster = `${WEB_APP_URL}?t=${timestamp}`;
+            
             try {
-                const response = await fetch(WEB_APP_URL);
-                state = await response.json();
+                const response = await fetch(urlWithCacheBuster);
+                const newData = await response.json();
+                
+                state = newData;
                 filteredState.masuk = [...state.masuk];
                 filteredState.keluar = [...state.keluar];
                 filteredState.arsip = [...state.arsip];
+                
                 updateDisplay();
-            } catch (e) { showToast("Gagal Sinkron!"); }
-            showLoading(false);
+                if(mainChart) updateChartData();
+                return true;
+            } catch (e) { 
+                showToast("Koneksi Internet Bermasalah!"); 
+                throw e;
+            }
         }
 
-        // FUNGSI FILTER DAN CARI (LOGIKA UTAMA)
+        function initCharts() {
+            const ctxMain = document.getElementById('mainChart').getContext('2d');
+            mainChart = new Chart(ctxMain, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                    datasets: [
+                        { label: 'Surat Masuk', backgroundColor: '#2563eb', data: Array(12).fill(0) },
+                        { label: 'Surat Keluar', backgroundColor: '#16a34a', data: Array(12).fill(0) },
+                        { label: 'Arsip', backgroundColor: '#9333ea', data: Array(12).fill(0) }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, grid: { display: false } } } }
+            });
+
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Surat Masuk', 'Surat Keluar', 'Arsip'],
+                    datasets: [{ data: [0, 0, 0], backgroundColor: ['#2563eb', '#16a34a', '#9333ea'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
+            });
+
+            updateChartData();
+        }
+
+        function updateChartData() {
+            const year = new Date().getFullYear();
+            const counts = { masuk: Array(12).fill(0), keluar: Array(12).fill(0), arsip: Array(12).fill(0) };
+
+            state.masuk.forEach(i => {
+                const d = new Date(i.tglsurat);
+                if(d.getFullYear() === year) counts.masuk[d.getMonth()]++;
+            });
+            state.keluar.forEach(i => {
+                const d = new Date(i.tglsurat);
+                if(d.getFullYear() === year) counts.keluar[d.getMonth()]++;
+            });
+            state.arsip.forEach(i => {
+                if (i.timestamp) {
+                    const parts = i.timestamp.split('/');
+                    if (parts.length >= 3) {
+                        const m = parseInt(parts[1]) - 1;
+                        if (m >= 0 && m < 12) counts.arsip[m]++;
+                    }
+                }
+            });
+
+            mainChart.data.datasets[0].data = counts.masuk;
+            mainChart.data.datasets[1].data = counts.keluar;
+            mainChart.data.datasets[2].data = counts.arsip;
+            mainChart.update();
+
+            pieChart.data.datasets[0].data = [state.masuk.length, state.keluar.length, state.arsip.length];
+            pieChart.update();
+        }
+
         function applyFilters(type) {
             const searchQuery = document.getElementById(`search-${type}`).value.toLowerCase();
-            let start = null;
-            let end = null;
-            
+            let start = null; let end = null;
             if (type !== 'arsip') {
                 start = document.getElementById(`filter-${type}-start`).value;
                 end = document.getElementById(`filter-${type}-end`).value;
             }
-
             filteredState[type] = state[type].filter(item => {
-                // Logika Pencarian Kata Kunci
-                const matchesSearch = Object.values(item).some(val => 
-                    String(val).toLowerCase().includes(searchQuery)
-                );
-
-                // Logika Filter Tanggal (Jika ada input)
+                const matchesSearch = Object.values(item).some(val => String(val).toLowerCase().includes(searchQuery));
                 let matchesDate = true;
                 if (type !== 'arsip' && item.tglsurat) {
                     const itemDate = new Date(item.tglsurat);
-                    if (start) {
-                        const startDate = new Date(start);
-                        if (itemDate < startDate) matchesDate = false;
-                    }
-                    if (end) {
-                        const endDate = new Date(end);
-                        if (itemDate > endDate) matchesDate = false;
-                    }
+                    if (start) { if (itemDate < new Date(start)) matchesDate = false; }
+                    if (end) { if (itemDate > new Date(end)) matchesDate = false; }
                 }
-
                 return matchesSearch && matchesDate;
             });
-
-            updateDisplay(true); // Update hanya tampilan tabel
+            updateDisplay(true);
         }
 
         function updateDisplay(onlyTable = false) {
@@ -360,19 +461,19 @@
                 document.getElementById('stat-masuk').innerText = state.masuk.length;
                 document.getElementById('stat-keluar').innerText = state.keluar.length;
                 document.getElementById('stat-arsip').innerText = state.arsip.length;
+                const statUsers = document.getElementById('stat-users');
+                if(statUsers) statUsers.innerText = state.users.length;
                 renderTable('body-users', state.users, ['username', 'peran']);
             }
-            
             renderTable('body-masuk', filteredState.masuk, ['nosurat', 'tglsurat', 'pengirim', 'perihal', 'timestamp']);
             renderTable('body-keluar', filteredState.keluar, ['nosurat', 'tglsurat', 'perihal', 'timestamp']);
-            
             const bArsip = document.getElementById('body-arsip');
-            if(bArsip) bArsip.innerHTML = filteredState.arsip.map((i, idx) => `<tr><td class="p-3 border-b">${idx + 1}</td><td class="p-3 border-b uppercase font-bold">${i.namadokumen || '-'}</td><td class="p-3 border-b"><a href="${i.file_link}" target="_blank" class="text-blue-600 underline">Lihat File 🔗</a></td><td class="p-3 border-b text-[10px]">${i.timestamp || '-'}</td></tr>`).join('');
+            if(bArsip) bArsip.innerHTML = filteredState.arsip.map((i, idx) => `<tr><td class="p-3 border-b">${idx + 1}</td><td class="p-3 border-b uppercase font-bold">${i.namadokumen || i.namaDokumen || '-'}</td><td class="p-3 border-b"><a href="${i.file_link}" target="_blank" class="text-blue-600 underline">Lihat File 🔗</a></td><td class="p-3 border-b text-[10px]">${i.timestamp || '-'}</td></tr>`).join('');
         }
 
         function renderTable(id, data, keys) {
             const b = document.getElementById(id); if(!b) return;
-            b.innerHTML = data.length === 0 ? `<tr><td colspan="${keys.length}" class="p-4 text-center text-gray-400">Tidak ada data ditemukan</td></tr>` : data.map(item => `<tr>${keys.map(k => `<td class="p-3 border-b">${item[k] || '-'}</td>`).join('')}</tr>`).join('');
+            b.innerHTML = data.length === 0 ? `<tr><td colspan="${keys.length}" class="p-4 text-center text-gray-400">Tidak ada data</td></tr>` : data.map(item => `<tr>${keys.map(k => `<td class="p-3 border-b">${item[k] || '-'}</td>`).join('')}</tr>`).join('');
         }
 
         async function saveToCloud(event, type) {
@@ -384,8 +485,12 @@
             data.timestamp = new Date().toLocaleString('id-ID');
             try {
                 await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'saveData', type: type, data: data }) });
-                setTimeout(async () => { await syncDataFromCloud(); event.target.reset(); showToast("Data Berhasil Disimpan!"); }, 1000);
-            } catch (e) { showToast("Gagal menyimpan data."); }
+                setTimeout(async () => { 
+                    await syncDataFromCloud(); 
+                    event.target.reset(); 
+                    showToast("Data Disimpan!"); 
+                }, 1500);
+            } catch (e) { showToast("Gagal Simpan."); }
             showLoading(false);
         }
 
@@ -401,8 +506,8 @@
                 const base64 = reader.result.split(',')[1];
                 try {
                     await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'saveFile', data: { fileName: file.name, mimeType: file.type, base64: base64, namaDokumen: nama } }) });
-                    setTimeout(async () => { showToast("Upload Dokumen Berhasil!"); await syncDataFromCloud(); event.target.reset(); }, 2000);
-                } catch (e) { showToast("Gagal upload file."); }
+                    setTimeout(async () => { showToast("Upload Berhasil!"); await syncDataFromCloud(); event.target.reset(); }, 2000);
+                } catch (e) { showToast("Gagal Upload."); }
                 showLoading(false);
             };
         }
@@ -411,56 +516,22 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'legal' });
             const title = type === 'masuk' ? 'LAPORAN SURAT MASUK' : 'LAPORAN SURAT KELUAR';
-            const dataToPrint = filteredState[type]; // Cetak data hasil filter
-            
+            const dataToPrint = filteredState[type];
             const img = new Image(); img.src = LOGO_URL; img.crossOrigin = "Anonymous";
             img.onload = function() {
                 const rgb = hexToRgb(currentThemeColor);
-                doc.setTextColor(rgb.r, rgb.g, rgb.b);
-                doc.setFontSize(20); doc.setFont('helvetica', 'bold');
+                doc.setTextColor(rgb.r, rgb.g, rgb.b); doc.setFontSize(20); doc.setFont('helvetica', 'bold');
                 doc.text("SDN 22 TANAH KERAS", 15, 15);
-                
                 doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 100, 100);
                 doc.text("Email: UPTsdn22tanahkeras@gmail.com | Web: www.sdn22tk.my.id", 15, 21);
-                
                 doc.addImage(img, 'PNG', doc.internal.pageSize.getWidth() - 35, 8, 20, 20);
                 doc.setDrawColor(rgb.r, rgb.g, rgb.b); doc.setLineWidth(1); doc.line(15, 30, doc.internal.pageSize.getWidth() - 15, 30);
-                
                 doc.setTextColor(0, 0, 0); doc.setFontSize(14); doc.setFont('helvetica', 'bold');
                 doc.text(title, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
-
-                // Menambahkan info filter di PDF jika ada
-                const start = document.getElementById(`filter-${type}-start`).value;
-                const end = document.getElementById(`filter-${type}-end`).value;
-                if (start || end) {
-                    doc.setFontSize(9); doc.setFont('helvetica', 'italic');
-                    doc.text(`Filter Periode: ${start || '-'} s/d ${end || '-'}`, 15, 48);
-                }
-                
-                const columns = type === 'masuk' ? 
-                    [["No Surat", "Tgl Surat", "Pengirim", "Perihal", "Waktu Simpan"]] : 
-                    [["No Surat", "Tgl Surat", "Tujuan / Perihal", "Waktu Simpan"]];
-                
-                const rows = dataToPrint.map(i => type === 'masuk' ? 
-                    [i.nosurat, i.tglsurat, i.pengirim, i.perihal, i.timestamp] : 
-                    [i.nosurat, i.tglsurat, i.perihal, i.timestamp]
-                );
-                
-                doc.autoTable({ 
-                    head: columns, body: rows, startY: 52, 
-                    headStyles: { fillColor: [rgb.r, rgb.g, rgb.b] },
-                    styles: { fontSize: 8 }, margin: { left: 15, right: 15 }
-                });
-                
-                const now = new Date();
-                const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                const footerText = `Dicetak: ${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} Jam ${now.toLocaleTimeString('id-ID')} WIB`;
-                
-                doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(150, 150, 150);
-                doc.text(footerText, 15, doc.internal.pageSize.getHeight() - 10);
-                
-                doc.save(`${title}_${now.getTime()}.pdf`);
+                const columns = type === 'masuk' ? [["No Surat", "Tgl Surat", "Pengirim", "Perihal", "Waktu"]] : [["No Surat", "Tgl Surat", "Perihal", "Waktu"]];
+                const rows = dataToPrint.map(i => type === 'masuk' ? [i.nosurat, i.tglsurat, i.pengirim, i.perihal, i.timestamp] : [i.nosurat, i.tglsurat, i.perihal, i.timestamp]);
+                doc.autoTable({ head: columns, body: rows, startY: 52, headStyles: { fillColor: [rgb.r, rgb.g, rgb.b] } });
+                doc.save(`${title}.pdf`);
             };
         }
 
@@ -470,10 +541,7 @@
         }
 
         function changeTheme(name, hex) {
-            currentThemeColor = hex;
-            localStorage.setItem('app-theme-hex', hex);
-            applyTheme(hex);
-            showToast("Tema Diganti!");
+            currentThemeColor = hex; localStorage.setItem('app-theme-hex', hex); applyTheme(hex); showToast("Tema Diganti!");
         }
 
         function applyTheme(hex) {
@@ -484,11 +552,22 @@
         }
 
         function switchTab(id) {
+            // KEAMANAN: Cegah User mengakses tab admin via console/script
+            const adminTabs = ['arsip', 'laporan-arsip', 'manajemen-user'];
+            if (currentUser.peran !== 'Admin' && adminTabs.includes(id)) {
+                showToast("Akses Terbatas untuk Admin!");
+                return;
+            }
+
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
             document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active', 'bg-black/20'));
-            document.getElementById('section-' + id).classList.remove('hidden');
-            const btn = document.getElementById('btn-' + id);
+            
+            const targetSection = document.getElementById('section-' + id);
+            if(targetSection) targetSection.classList.remove('hidden');
+            
+            const btn = document.getElementById('btn-' + id); 
             if(btn) btn.classList.add('active', 'bg-black/20');
+            
             document.getElementById('page-title').innerText = id.replace('-', ' ').toUpperCase();
         }
 
@@ -500,6 +579,7 @@
             const savedHex = localStorage.getItem('app-theme-hex');
             if(savedHex) applyTheme(savedHex);
             updateClock();
+            syncDataFromCloud().catch(e => console.log("Initial sync failed."));
         };
     </script>
 </body>

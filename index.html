@@ -13,11 +13,8 @@
         body { font-family: 'Inter', sans-serif; transition: background-color 0.3s; }
         aside, .sidebar-item.active { transition: background-color 0.3s, border-color 0.3s; }
         .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
-        
-        /* Pengaturan Hak Akses via CSS */
-        .admin-only { display: none !important; }
-        body.is-admin .admin-only { display: flex !important; }
-        
+        .admin-only { display: none; }
+        body.is-admin .admin-only { display: flex; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 300; align-items: center; justify-content: center; flex-direction: column; }
@@ -84,13 +81,9 @@
                 <button onclick="switchTab('beranda')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm active" id="btn-beranda">🏠 Beranda</button>
                 <button onclick="switchTab('surat-masuk')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-surat-masuk">📥 Surat Masuk</button>
                 <button onclick="switchTab('surat-keluar')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-surat-keluar">📤 Surat Keluar</button>
-                <!-- Menu Khusus Admin -->
                 <button onclick="switchTab('arsip')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-arsip">📂 Arsip Dokumen</button>
-                
                 <button onclick="switchTab('laporan-masuk')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-masuk">📊 Lap. Masuk</button>
                 <button onclick="switchTab('laporan-keluar')" class="sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-keluar">📈 Lap. Keluar</button>
-                
-                <!-- Menu Khusus Admin -->
                 <button onclick="switchTab('laporan-arsip')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-laporan-arsip">🗂️ Lap. Arsip</button>
                 <button onclick="switchTab('manajemen-user')" class="admin-only sidebar-item w-full flex items-center px-5 py-2.5 text-sm" id="btn-manajemen-user">👥 User</button>
             </nav>
@@ -134,7 +127,6 @@
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Surat Keluar</h3>
                             <p id="stat-keluar" class="text-2xl font-bold text-green-600">0</p>
                         </div>
-                        <!-- Stat Khusus Admin -->
                         <div class="admin-only bg-white p-5 rounded-xl card-stat card-stat-arsip shadow-sm hover:shadow-md transition-shadow">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Arsip Digital</h3>
                             <p id="stat-arsip" class="text-2xl font-bold text-purple-600">0</p>
@@ -168,7 +160,7 @@
                     </div>
                 </section>
 
-                <!-- Form Section (Bisa diakses User & Admin) -->
+                <!-- Form Section -->
                 <section id="section-surat-masuk" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Tambah Surat Masuk</h3>
                     <form onsubmit="saveToCloud(event, 'masuk')" class="space-y-3">
@@ -196,8 +188,7 @@
                     </form>
                 </section>
 
-                <!-- Arsip Khusus Admin -->
-                <section id="section-arsip" class="hidden admin-only max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
+                <section id="section-arsip" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Upload Dokumen Digital (Google Drive)</h3>
                     <form onsubmit="handleFileUpload(event)" class="space-y-4">
                         <input name="namaDokumen" id="arsip-nama" placeholder="Nama Dokumen (Contoh: SK Mutasi)" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
@@ -208,7 +199,7 @@
                     </form>
                 </section>
 
-                <!-- Laporan Masuk (Bisa diakses User & Admin) -->
+                <!-- Laporan Sections -->
                 <section id="section-laporan-masuk" class="hidden bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
                     <div class="p-4 bg-gray-50 border-b space-y-4">
                         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -231,7 +222,6 @@
                     </div>
                 </section>
 
-                <!-- Laporan Keluar (Bisa diakses User & Admin) -->
                 <section id="section-laporan-keluar" class="hidden bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
                     <div class="p-4 bg-gray-50 border-b space-y-4">
                         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -254,8 +244,7 @@
                     </div>
                 </section>
 
-                <!-- Laporan Arsip Khusus Admin -->
-                <section id="section-laporan-arsip" class="hidden admin-only bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
+                <section id="section-laporan-arsip" class="hidden bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
                     <div class="p-4 bg-gray-50 border-b space-y-4">
                         <div class="flex items-center justify-between">
                             <h3 class="font-bold text-sm">Laporan Arsip Digital</h3>
@@ -273,8 +262,7 @@
                     </div>
                 </section>
 
-                <!-- Manajemen User Khusus Admin -->
-                <section id="section-manajemen-user" class="hidden admin-only max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
+                <section id="section-manajemen-user" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4">Tambah Pengguna</h3>
                     <form onsubmit="saveToCloud(event, 'users')" class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-6">
                         <input name="username" placeholder="Username" required class="px-3 py-2 border rounded-lg text-sm">
@@ -314,6 +302,10 @@
         function openSettings() { document.getElementById('modal-settings').classList.add('show'); document.getElementById('user-dropdown').classList.remove('show'); }
         function closeSettings() { document.getElementById('modal-settings').classList.remove('show'); }
 
+        /**
+         * PERBAIKAN: Fungsi handleLogin diperbarui untuk melakukan sinkronisasi
+         * data sebelum memvalidasi kredensial pengguna.
+         */
         async function handleLogin(event) {
             event.preventDefault();
             const u = document.getElementById('login-user').value.trim();
@@ -323,6 +315,7 @@
             errorMsg.classList.add('hidden');
             showLoading(true);
 
+            // Selalu ambil data terbaru dari cloud sebelum login agar user baru terdeteksi
             try {
                 await syncDataFromCloud(); 
             } catch (err) {
@@ -331,17 +324,19 @@
 
             showLoading(false);
 
+            // Cari user di state yang baru disinkronkan
             const found = state.users.find(usr => 
                 String(usr.username).toLowerCase() === u.toLowerCase() && 
                 String(usr.sandi) === p
             );
 
+            // Cek akun Master atau akun di database
             if (found || (u === 'SDN22TK' && p === '12345')) {
                 currentUser = found || { username: 'SDN22TK', peran: 'Admin' };
                 document.getElementById('display-username').innerText = currentUser.username;
                 document.getElementById('display-role').innerText = currentUser.peran;
                 
-                // AKTIVASI PERAN: Menambahkan class 'is-admin' jika peran adalah Admin
+                // Set UI berdasarkan Role
                 document.body.classList.toggle('is-admin', currentUser.peran === 'Admin');
                 
                 document.getElementById('login-screen').classList.add('hidden');
@@ -356,6 +351,7 @@
         }
 
         async function syncDataFromCloud() {
+            // Gunakan cache-busting agar tidak mengambil data lama dari browser
             const timestamp = new Date().getTime();
             const urlWithCacheBuster = `${WEB_APP_URL}?t=${timestamp}`;
             
@@ -363,6 +359,7 @@
                 const response = await fetch(urlWithCacheBuster);
                 const newData = await response.json();
                 
+                // Update Global State
                 state = newData;
                 filteredState.masuk = [...state.masuk];
                 filteredState.keluar = [...state.keluar];
@@ -418,6 +415,7 @@
                 if(d.getFullYear() === year) counts.keluar[d.getMonth()]++;
             });
             state.arsip.forEach(i => {
+                // Parsing timestamp dari format lokalisasi
                 if (i.timestamp) {
                     const parts = i.timestamp.split('/');
                     if (parts.length >= 3) {
@@ -552,22 +550,10 @@
         }
 
         function switchTab(id) {
-            // KEAMANAN: Cegah User mengakses tab admin via console/script
-            const adminTabs = ['arsip', 'laporan-arsip', 'manajemen-user'];
-            if (currentUser.peran !== 'Admin' && adminTabs.includes(id)) {
-                showToast("Akses Terbatas untuk Admin!");
-                return;
-            }
-
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
             document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active', 'bg-black/20'));
-            
-            const targetSection = document.getElementById('section-' + id);
-            if(targetSection) targetSection.classList.remove('hidden');
-            
-            const btn = document.getElementById('btn-' + id); 
-            if(btn) btn.classList.add('active', 'bg-black/20');
-            
+            document.getElementById('section-' + id).classList.remove('hidden');
+            const btn = document.getElementById('btn-' + id); if(btn) btn.classList.add('active', 'bg-black/20');
             document.getElementById('page-title').innerText = id.replace('-', ' ').toUpperCase();
         }
 
@@ -579,7 +565,9 @@
             const savedHex = localStorage.getItem('app-theme-hex');
             if(savedHex) applyTheme(savedHex);
             updateClock();
-            syncDataFromCloud().catch(e => console.log("Initial sync failed."));
+            
+            // Opsional: Sinkronisasi data di awal agar data user sudah siap
+            syncDataFromCloud().catch(e => console.log("Initial sync failed, will retry on login."));
         };
     </script>
 </body>

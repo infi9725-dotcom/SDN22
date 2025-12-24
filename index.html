@@ -30,7 +30,7 @@
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
         .modal.show { display: flex; }
 
-        /* Stat Card Borders (Fixed Colors as requested) */
+        /* Stat Card Borders (Fixed Colors) */
         .card-stat-masuk { border-left: 4px solid #2563eb; } /* Blue */
         .card-stat-keluar { border-left: 4px solid #16a34a; } /* Green */
         .card-stat-arsip { border-left: 4px solid #9333ea; } /* Purple */
@@ -50,7 +50,7 @@
                 <h3 class="font-bold text-lg text-gray-800">⚙️ Pengaturan Tema</h3>
                 <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-            <p class="text-xs text-gray-500 mb-4">Pilih warna utama untuk aplikasi Anda:</p>
+            <p class="text-xs text-gray-500 mb-4">Pilih warna utama untuk aplikasi Anda (Akan tersimpan otomatis):</p>
             <div class="grid grid-cols-5 gap-3">
                 <button onclick="changeTheme('blue', '#1e3a8a')" class="w-full aspect-square rounded-lg bg-blue-900 border-2 border-transparent hover:scale-105 transition-all" title="Biru"></button>
                 <button onclick="changeTheme('black', '#111827')" class="w-full aspect-square rounded-lg bg-gray-900 border-2 border-transparent hover:scale-105 transition-all" title="Hitam"></button>
@@ -140,20 +140,17 @@
             </header>
 
             <div class="p-6 overflow-y-auto flex-1" id="main-content">
-                <!-- Beranda Section with Fixed Colors for Stats -->
+                <!-- Beranda Section -->
                 <section id="section-beranda" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <!-- Surat Masuk - Fixed Blue -->
                         <div class="bg-white p-5 rounded-xl card-stat card-stat-masuk shadow-sm">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Surat Masuk</h3>
                             <p id="stat-masuk" class="text-2xl font-bold text-blue-600">0</p>
                         </div>
-                        <!-- Surat Keluar - Fixed Green -->
                         <div class="bg-white p-5 rounded-xl card-stat card-stat-keluar shadow-sm">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Surat Keluar</h3>
                             <p id="stat-keluar" class="text-2xl font-bold text-green-600">0</p>
                         </div>
-                        <!-- Total Arsip - Fixed Purple -->
                         <div class="admin-only bg-white p-5 rounded-xl card-stat card-stat-arsip shadow-sm">
                             <h3 class="text-gray-500 text-[10px] font-bold uppercase">Total Arsip</h3>
                             <p id="stat-arsip" class="text-2xl font-bold text-purple-600">0</p>
@@ -266,6 +263,18 @@
         let state = { masuk: [], keluar: [], arsip: [], users: [] };
         let currentThemeColor = '#1e3a8a'; 
 
+        // Fungsi Memuat Tema Saat Aplikasi Dibuka
+        function loadSavedTheme() {
+            const savedTheme = localStorage.getItem('app-theme-name');
+            const savedHex = localStorage.getItem('app-theme-hex');
+            
+            if (savedTheme && savedHex) {
+                applyTheme(savedTheme, savedHex);
+            } else {
+                applyTheme('blue', '#1e3a8a'); // Default
+            }
+        }
+
         function openSettings() {
             document.getElementById('modal-settings').classList.add('show');
             document.getElementById('user-dropdown').classList.remove('show');
@@ -275,7 +284,8 @@
             document.getElementById('modal-settings').classList.remove('show');
         }
 
-        function changeTheme(themeName, hex) {
+        // Fungsi Inti untuk menerapkan tema
+        function applyTheme(themeName, hex) {
             currentThemeColor = hex;
             
             const themes = ['blue', 'black', 'red', 'green', 'purple', 'pink', 'orange', 'yellow', 'jingga', 'brown'];
@@ -287,17 +297,28 @@
             const loginTitle = document.getElementById('login-title');
             const btnLogin = document.getElementById('btn-login-main');
             
-            sidebar.style.backgroundColor = hex;
-            loginScreen.style.backgroundColor = hex;
-            loginTitle.style.color = hex;
-            btnLogin.style.backgroundColor = hex;
+            if(sidebar) sidebar.style.backgroundColor = hex;
+            if(loginScreen) loginScreen.style.backgroundColor = hex;
+            if(loginTitle) loginTitle.style.color = hex;
+            if(btnLogin) btnLogin.style.backgroundColor = hex;
             
-            // Only update buttons and general components, keeping Beranda cards as requested
             document.querySelectorAll('.btn-action').forEach(btn => btn.style.backgroundColor = hex);
             document.querySelectorAll('.head-table').forEach(h => h.style.backgroundColor = hex);
-            document.querySelectorAll('.sidebar-item.active').forEach(b => b.style.backgroundColor = 'rgba(0,0,0,0.2)');
+            
+            // Sidebar active color adjustment
+            const activeSidebar = document.querySelector('.sidebar-item.active');
+            if(activeSidebar) activeSidebar.style.backgroundColor = 'rgba(0,0,0,0.2)';
+        }
 
-            showToast("Tema Berhasil Diubah ke " + themeName.toUpperCase());
+        // Fungsi saat user memilih tema (menyimpan ke storage)
+        function changeTheme(themeName, hex) {
+            applyTheme(themeName, hex);
+            
+            // Simpan ke localStorage agar permanen
+            localStorage.setItem('app-theme-name', themeName);
+            localStorage.setItem('app-theme-hex', hex);
+
+            showToast("Tema " + themeName.toUpperCase() + " Disimpan!");
         }
 
         function updateClock() {
@@ -396,17 +417,69 @@
             const title = type === 'masuk' ? 'LAPORAN SURAT MASUK' : 'LAPORAN SURAT KELUAR';
             const tableData = state[type];
             const img = new Image(); img.src = LOGO_URL; img.crossOrigin = "Anonymous";
+            
             img.onload = function() {
                 const rgb = hexToRgb(currentThemeColor);
+                
+                // HEADER KOP SURAT
                 doc.setTextColor(rgb.r, rgb.g, rgb.b);
-                doc.setFontSize(18); doc.text("SDN 22 TANAH KERAS", 15, 15);
-                doc.addImage(img, 'PNG', doc.internal.pageSize.getWidth() - 35, 10, 20, 20);
-                doc.setDrawColor(rgb.r, rgb.g, rgb.b); doc.line(15, 32, doc.internal.pageSize.getWidth() - 15, 32);
-                doc.setTextColor(0,0,0); doc.text(title, doc.internal.pageSize.getWidth() / 2, 42, { align: 'center' });
-                const columns = type === 'masuk' ? [["No Surat", "Tgl Surat", "Pengirim", "Perihal", "Waktu"]] : [["No Surat", "Tgl Surat", "Tujuan / Perihal", "Waktu"]];
-                const rows = tableData.map(i => type === 'masuk' ? [i.nosurat, i.tglsurat, i.pengirim, i.perihal, i.timestamp] : [i.nosurat, i.tglsurat, i.perihal, i.timestamp]);
-                doc.autoTable({ head: columns, body: rows, startY: 55, headStyles: { fillColor: [rgb.r, rgb.g, rgb.b] } });
-                doc.save(`${title}.pdf`);
+                doc.setFontSize(20);
+                doc.setFont('helvetica', 'bold');
+                doc.text("SDN 22 TANAH KERAS", 15, 15);
+                
+                // SUBHEADER / KONTAK (GMAIL & WEBSITE)
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 100, 100);
+                doc.text("Gmail: UPTsdn22tanahkeras@gmail.com | Website: www.sdn22tk.my.id", 15, 21);
+                
+                // LOGO
+                doc.addImage(img, 'PNG', doc.internal.pageSize.getWidth() - 35, 8, 20, 20);
+                
+                // GARIS PEMISAH
+                doc.setDrawColor(rgb.r, rgb.g, rgb.b);
+                doc.setLineWidth(1);
+                doc.line(15, 30, doc.internal.pageSize.getWidth() - 15, 30);
+                
+                // JUDUL LAPORAN
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.text(title, doc.internal.pageSize.getWidth() / 2, 42, { align: 'center' });
+                
+                // TABEL
+                const columns = type === 'masuk' ? 
+                    [["No Surat", "Tgl Surat", "Pengirim", "Perihal", "Waktu Simpan"]] : 
+                    [["No Surat", "Tgl Surat", "Tujuan / Perihal", "Waktu Simpan"]];
+                
+                const rows = tableData.map(i => type === 'masuk' ? 
+                    [i.nosurat, i.tglsurat, i.pengirim, i.perihal, i.timestamp] : 
+                    [i.nosurat, i.tglsurat, i.perihal, i.timestamp]
+                );
+                
+                doc.autoTable({ 
+                    head: columns, 
+                    body: rows, 
+                    startY: 50, 
+                    headStyles: { fillColor: [rgb.r, rgb.g, rgb.b], fontSize: 9 },
+                    styles: { fontSize: 8 },
+                    margin: { left: 15, right: 15 }
+                });
+                
+                // INFORMASI CETAK (FOOTER)
+                const finalY = doc.lastAutoTable.finalY || 50;
+                const now = new Date();
+                const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                
+                const printInfo = `Dicetak pada: ${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} | Jam: ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
+                
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'italic');
+                doc.setTextColor(150, 150, 150);
+                doc.text(printInfo, 15, finalY + 10);
+                
+                doc.save(`${title}_${now.getTime()}.pdf`);
             };
         }
 
@@ -436,13 +509,21 @@
             document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
             document.getElementById('section-' + id).classList.remove('hidden');
             const btn = document.getElementById('btn-' + id);
-            if(btn) btn.classList.add('active');
+            if(btn) {
+                btn.classList.add('active');
+                btn.style.backgroundColor = 'rgba(0,0,0,0.2)';
+            }
             document.getElementById('page-title').innerText = id.replace('-', ' ').toUpperCase();
         }
 
         function handleLogout() { location.reload(); }
         function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
         function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 3000); }
+
+        // Inisialisasi Tema saat halaman dimuat
+        window.onload = function() {
+            loadSavedTheme();
+        };
     </script>
 </body>
 </html>

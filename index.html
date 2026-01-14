@@ -86,13 +86,13 @@
         <div class="bg-white w-full max-w-[400px] rounded-3xl shadow-2xl p-8 space-y-6">
             <div class="text-center">
                 <img src="https://iili.io/3b1SedN.png" alt="Logo" class="h-20 mx-auto mb-4">
-                <h1 class="text-2xl font-black text-gray-800 leading-tight">UPT SDN 22<br>TANAH KERAS</h1>
+                <h1 class="text-2xl font-black text-gray-800 leading-tight">SDN 22<br>TANAH KERAS</h1>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <input type="text" id="login-user" required placeholder="Username" class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 ring-theme-accent">
                 <input type="password" id="login-pass" required placeholder="Password" class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 ring-theme-accent">
                 <div id="login-error" class="hidden text-red-500 text-xs text-center font-bold">⚠️ Username atau Password Salah!</div>
-                <button type="submit" class="w-full bg-theme-accent text-white font-bold py-3.5 rounded-xl shadow-lg">MASUK</button>
+                <button type="submit" class="w-full bg-theme-accent text-white font-bold py-3.5 rounded-xl shadow-lg">MASUK SISTEM</button>
             </form>
         </div>
     </div>
@@ -250,7 +250,7 @@
 
                 <!-- Forms -->
                 <section id="section-arsip" class="hidden max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-                    <h3 class="font-black text-gray-800 mb-6 text-center text-lg uppercase">DOKUMEN</h3>
+                    <h3 class="font-black text-gray-800 mb-6 text-center text-lg uppercase">Upload Dokumen</h3>
                     <form onsubmit="handleUpload(event)" class="space-y-5">
                         <input name="namaDokumen" id="arsip-nama" required class="w-full p-3 bg-gray-50 rounded-xl outline-none" placeholder="Nama Dokumen">
                         <input type="file" id="arsip-file" required class="w-full p-3 bg-gray-50 rounded-xl text-xs outline-none">
@@ -259,7 +259,7 @@
                 </section>
 
                 <section id="section-surat-masuk" class="hidden max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-                    <h3 class="font-black text-gray-800 mb-6 text-center text-lg uppercase">SURAT MASUK</h3>
+                    <h3 class="font-black text-gray-800 mb-6 text-center text-lg uppercase">Surat Masuk Baru</h3>
                     <form onsubmit="saveToCloud(event, 'masuk')" class="space-y-4">
                         <input name="nosurat" required class="w-full p-3 bg-gray-50 rounded-xl outline-none" placeholder="Nomor Surat">
                         <input type="date" name="tglsurat" required class="w-full p-3 bg-gray-50 rounded-xl outline-none">
@@ -270,7 +270,7 @@
                 </section>
 
                 <section id="section-surat-keluar" class="hidden max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-                    <h3 class="font-black text-gray-800 mb-6 text-center text-lg uppercase">SURAT KELUAR</h3>
+                    <h3 class="font-black text-gray-800 mb-6 text-center text-lg uppercase">Surat Keluar Baru</h3>
                     <form onsubmit="saveToCloud(event, 'keluar')" class="space-y-4">
                         <input name="nosurat" required class="w-full p-3 bg-gray-50 rounded-xl outline-none" placeholder="Nomor Surat">
                         <input type="date" name="tglsurat" required class="w-full p-3 bg-gray-50 rounded-xl outline-none">
@@ -637,4 +637,3 @@
     </script>
 </body>
 </html>
-
